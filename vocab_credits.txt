@@ -1,0 +1,17 @@
+【ピヨ単 語彙データ 著作権表記】
+
+本アプリの語彙データは以下のオープンデータを使用しています。
+
+■ CEFR-J Wordlist
+『CEFR-J Wordlist Version 1.6』東京外国語大学投野由紀夫研究室
+URL: http://www.cefr-j.org/download.html#cefrj_wordlist
+ライセンス：教育・研究・商用利用可（引用表記必須）
+
+■ New General Service List
+New General Service List 1.2
+Browne, C. & Culligan, B.
+URL: https://www.newgeneralservicelist.com
+ライセンス：CC BY-SA 4.0
+
+本アプリは教育目的で作成されました。
+生成日：2026-04-15

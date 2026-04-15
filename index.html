@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ピヨ単 - 英語単語学習アプリ</title>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Baloo+2:wght@400;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================
+       CSS変数：テーマカラー一元管理
+       ============================================ */
+    :root {
+      --color-bg: #FFFBF0;          /* クリーム白（背景） */
+      --color-accent: #FFD93D;      /* ひまわり黄（アクセント） */
+      --color-sub: #6BCB77;         /* ミントグリーン（サブ） */
+      --color-error: #FF6B6B;       /* コーラルピンク（エラー） */
+      --color-text: #2D2D2D;        /* チャコール（テキスト） */
+      --color-white: #FFFFFF;
+      --color-light: #FFF5D6;       /* 薄い黄色 */
+      --color-accent-dark: #E5C200; /* 黄色の暗め */
+      --color-sub-dark: #4CAF57;    /* 緑の暗め */
+      --color-card: #FFFFFF;
+      --color-shadow: rgba(0,0,0,0.12);
+      --color-shadow-hover: rgba(0,0,0,0.18);
+      --radius-sm: 12px;
+      --radius-md: 20px;
+      --radius-lg: 30px;
+      --transition: 0.25s ease;
+      --font-jp: 'Noto Sans JP', sans-serif;
+      --font-en: 'Baloo 2', cursive;
+      --font-body: 'Nunito', sans-serif;
+    }
+
+    /* ============================================
+       リセット・ベース
+       ============================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background-color: var(--color-bg);
+      color: var(--color-text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ============================================
+       ヘッダー
+       ============================================ */
+    .app-header {
+      background: linear-gradient(135deg, var(--color-accent) 0%, #FFE566 100%);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 15px rgba(255, 217, 61, 0.4);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .app-title {
+      font-family: var(--font-en);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--color-text);
+      letter-spacing: -0.5px;
+    }
+    .app-subtitle {
+      font-family: var(--font-jp);
+      font-size: 0.7rem;
+      color: #6b5800;
+      font-weight: 500;
+    }
+    .header-mascot {
+      width: 52px;
+      height: 52px;
+    }
+    .header-stats {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .streak-badge {
+      background: white;
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-family: var(--font-jp);
+      font-size: 0.78rem;
+    }
+    .goal-badge {
+      background: var(--color-sub);
+      color: white;
+      border-radius: var(--radius-sm);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 2px 8px rgba(107, 203, 119, 0.4);
+      font-family: var(--font-jp);
+      font-size: 0.78rem;
+    }
+
+    /* ============================================
+       ナビゲーション
+       ============================================ */
+    .nav-tabs {
+      background: white;
+      display: flex;
+      border-bottom: 2px solid #f0ead6;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab {
+      flex: 1;
+      min-width: 100px;
+      padding: 12px 16px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #999;
+      cursor: pointer;
+      transition: var(--transition);
+      border-bottom: 3px solid transparent;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .nav-tab:hover { color: var(--color-accent-dark); background: var(--color-light); }
+    .nav-tab.active {
+      color: var(--color-text);
+      border-bottom-color: var(--color-accent);
+      background: var(--color-bg);
+    }
+
+    /* ============================================
+       メインコンテンツ
+       ============================================ */
+    .main-content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+
+    /* ============================================
+       画面（セクション）切り替え
+       ============================================ */
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ============================================
+       フィルターバー
+       ============================================ */
+    .filter-bar {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 12px var(--color-shadow);
+    }
+    .filter-bar-title {
+      font-family: var(--font-jp);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .filter-btn {
+      padding: 7px 16px;
+      border: 2px solid #e8e0c8;
+      border-radius: 50px;
+      background: white;
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      color: #888;
+    }
+    .filter-btn:hover { border-color: var(--color-accent); color: var(--color-text); }
+    .filter-btn.active {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: var(--color-text);
+      box-shadow: 0 2px 8px rgba(255, 217, 61, 0.5);
+    }
+    .word-count-display {
+      margin-left: auto;
+      font-family: var(--font-jp);
+      font-size: 0.82rem;
+      color: #888;
+      font-weight: 500;
+    }
+
+    /* ============================================
+       ホーム画面
+       ============================================ */
+    .home-welcome {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .home-piyo {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 16px;
+      animation: bounce-piyo 2s ease-in-out infinite;
+    }
+    @keyframes bounce-piyo {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    .home-greeting {
+      font-family: var(--font-jp);
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin-bottom: 6px;
+    }
+    .home-submsg {
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+      color: #888;
+    }
+    .home-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .home-mode-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px var(--color-shadow);
+      border: 3px solid transparent;
+    }
+    .home-mode-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 25px var(--color-shadow-hover);
+      border-color: var(--color-accent);
+    }
+    .mode-icon { font-size: 2.5rem; margin-bottom: 10px; }
+    .mode-name {
+      font-family: var(--font-jp);
+      font-size: 1.05rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .mode-desc {
+      font-family: var(--font-jp);
+      font-size: 0.78rem;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    .home-stats {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--color-shadow);
+    }
+    .home-stats-title {
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #888;
+      margin-bottom: 14px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 12px 8px;
+      background: var(--color-bg);
+      border-radius: var(--radius-sm);
+    }
+    .stat-value {
+      font-family: var(--font-en);
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--color-accent-dark);
+    }
+    .stat-label {
+      font-family: var(--font-jp);
+      font-size: 0.72rem;
+      color: #888;
+      margin-top: 2px;
+    }
+
+    /* ============================================
+       フラッシュカードモード
+       ============================================ */
+    .mode-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .mode-title {
+      font-family: var(--font-jp);
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+    .back-btn {
+      background: white;
+      border: 2px solid #e8e0c8;
+      border-radius: 50px;
+      padding: 7px 16px;
+      font-family: var(--font-jp);
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .back-btn:hover { border-color: var(--color-accent); background: var(--color-light); }
+
+    /* プログレスバー */
+    .progress-bar-wrap {
+      background: #f0ead6;
+      border-radius: 50px;
+      height: 10px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-accent), var(--color-sub));
+      border-radius: 50px;
+      transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .progress-info {
+      display: flex;
+      justify-content: space-between;
+      font-family: var(--font-jp);
+      font-size: 0.78rem;
+      color: #888;
+      margin-bottom: 20px;
+    }
+    .progress-info strong { color: var(--color-text); }
+
+    /* フラッシュカード本体 */
+    .flashcard-scene {
+      perspective: 1000px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto 24px;
+      height: 260px;
+    }
+    .flashcard {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+    .flashcard.flipped { transform: rotateY(180deg); }
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-lg);
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 30px;
+      box-shadow: 0 8px 30px var(--color-shadow);
+    }
+    .card-front {
+      background: white;
+      border: 3px solid var(--color-accent);
+    }
+    .card-back {
+      background: var(--color-light);
+      border: 3px solid var(--color-sub);
+      transform: rotateY(180deg);
+    }
+    .card-label {
+      font-family: var(--font-jp);
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #bbb;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .card-word {
+      font-family: var(--font-en);
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--color-text);
+      text-align: center;
+      margin-bottom: 8px;
+    }
+    .card-pos {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+    .card-level-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      margin-top: 8px;
+    }
+    .card-meaning {
+      font-family: var(--font-jp);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text);
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .card-example {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      color: #888;
+      text-align: center;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .flip-hint {
+      font-family: var(--font-jp);
+      font-size: 0.75rem;
+      color: #ccc;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    /* 音声ボタン */
+    .speak-btn {
+      position: absolute;
+      bottom: 14px;
+      right: 16px;
+      background: var(--color-accent);
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 1rem;
+      box-shadow: 0 2px 8px rgba(255,217,61,0.5);
+    }
+    .speak-btn:hover { transform: scale(1.1); background: var(--color-accent-dark); }
+
+    /* 判定ボタン */
+    .flashcard-actions {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .btn-got-it {
+      flex: 1;
+      max-width: 200px;
+      padding: 14px 20px;
+      background: var(--color-sub);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-jp);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px rgba(107, 203, 119, 0.4);
+    }
+    .btn-got-it:hover { background: var(--color-sub-dark); transform: translateY(-2px); }
+    .btn-again {
+      flex: 1;
+      max-width: 200px;
+      padding: 14px 20px;
+      background: var(--color-error);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-jp);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+    }
+    .btn-again:hover { background: #e05555; transform: translateY(-2px); }
+
+    /* フィードバックピヨ */
+    .piyo-feedback {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      min-height: 90px;
+    }
+    .piyo-feedback-img { width: 70px; height: 70px; }
+    .piyo-message {
+      font-family: var(--font-jp);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--color-text);
+      text-align: center;
+      background: white;
+      padding: 6px 14px;
+      border-radius: 50px;
+      box-shadow: 0 2px 8px var(--color-shadow);
+    }
+
+    /* 完了画面 */
+    .complete-screen {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .complete-piyo { width: 120px; height: 120px; margin: 0 auto 20px; }
+    .complete-title {
+      font-family: var(--font-jp);
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    .complete-score {
+      font-family: var(--font-en);
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--color-accent-dark);
+      margin-bottom: 6px;
+    }
+    .complete-detail {
+      font-family: var(--font-jp);
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 30px;
+    }
+    .complete-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-primary {
+      padding: 14px 28px;
+      background: var(--color-accent);
+      color: var(--color-text);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-jp);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      box-shadow: 0 4px 15px rgba(255,217,61,0.4);
+    }
+    .btn-primary:hover { background: var(--color-accent-dark); transform: translateY(-2px); }
+    .btn-secondary {
+      padding: 14px 28px;
+      background: white;
+      color: var(--color-text);
+      border: 2px solid #e8e0c8;
+      border-radius: var(--radius-md);
+      font-family: var(--font-jp);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-secondary:hover { border-color: var(--color-accent); background: var(--color-light); }
+
+    /* ============================================
+       4択クイズモード
+       ============================================ */
+    .quiz-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 36px 30px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 30px var(--color-shadow);
+      text-align: center;
+      position: relative;
+    }
+    .quiz-question-label {
+      font-family: var(--font-jp);
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #bbb;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .quiz-word {
+      font-family: var(--font-en);
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--color-text);
+      margin-bottom: 8px;
+    }
+    .quiz-word-pos {
+      font-family: var(--font-body);
+      font-size: 0.82rem;
+      color: #aaa;
+    }
+
+    .quiz-choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .quiz-choice {
+      padding: 16px 14px;
+      background: white;
+      border: 2px solid #e8e0c8;
+      border-radius: var(--radius-md);
+      font-family: var(--font-jp);
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      text-align: left;
+      position: relative;
+      line-height: 1.4;
+    }
+    .quiz-choice:hover:not(:disabled) {
+      border-color: var(--color-accent);
+      background: var(--color-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255,217,61,0.3);
+    }
+    .quiz-choice.correct {
+      background: #e8f8ea;
+      border-color: var(--color-sub);
+      color: #2a7a30;
+    }
+    .quiz-choice.wrong {
+      background: #fdecea;
+      border-color: var(--color-error);
+      color: #c0392b;
+    }
+    .quiz-choice:disabled { cursor: not-allowed; }
+
+    .quiz-explanation {
+      background: var(--color-light);
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      margin-bottom: 16px;
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+      line-height: 1.6;
+      display: none;
+    }
+    .quiz-explanation .ex-label {
+      font-weight: 700;
+      color: var(--color-accent-dark);
+      margin-bottom: 6px;
+    }
+    .quiz-next-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--color-accent);
+      color: var(--color-text);
+      border: none;
+      border-radius: var(--radius-md);
+      font-family: var(--font-jp);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      display: none;
+      box-shadow: 0 4px 15px rgba(255,217,61,0.4);
+    }
+    .quiz-next-btn:hover { background: var(--color-accent-dark); transform: translateY(-2px); }
+
+    /* ============================================
+       CSVインポート画面
+       ============================================ */
+    .import-area {
+      border: 3px dashed #e8e0c8;
+      border-radius: var(--radius-lg);
+      padding: 40px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 20px;
+      background: white;
+    }
+    .import-area:hover, .import-area.dragover {
+      border-color: var(--color-accent);
+      background: var(--color-light);
+    }
+    .import-icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .import-title {
+      font-family: var(--font-jp);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .import-sub {
+      font-family: var(--font-jp);
+      font-size: 0.8rem;
+      color: #888;
+      margin-bottom: 16px;
+    }
+    .import-format {
+      background: #f7f3e8;
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-family: monospace;
+      font-size: 0.78rem;
+      color: #666;
+      text-align: left;
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+    .btn-file-select {
+      display: inline-block;
+      padding: 10px 24px;
+      background: var(--color-accent);
+      color: var(--color-text);
+      border: none;
+      border-radius: 50px;
+      font-family: var(--font-jp);
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-file-select:hover { background: var(--color-accent-dark); }
+
+    .import-preview {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 20px;
+      box-shadow: 0 2px 12px var(--color-shadow);
+      margin-bottom: 20px;
+      display: none;
+    }
+    .preview-title {
+      font-family: var(--font-jp);
+      font-size: 0.88rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    .preview-table th {
+      background: var(--color-bg);
+      padding: 8px 12px;
+      text-align: left;
+      font-family: var(--font-jp);
+      font-weight: 700;
+      border-bottom: 2px solid #e8e0c8;
+    }
+    .preview-table td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f0ead6;
+      font-family: var(--font-jp);
+    }
+    .preview-table tr:last-child td { border-bottom: none; }
+
+    .import-error {
+      background: #fdecea;
+      border: 2px solid var(--color-error);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+      color: #c0392b;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .import-success {
+      background: #e8f8ea;
+      border: 2px solid var(--color-sub);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+      color: #2a7a30;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ============================================
+       レベルバッジ（共通）
+       ============================================ */
+    .level-A1 { background: #dff6ff; color: #0077aa; }
+    .level-A2 { background: #e8ffe8; color: #007a30; }
+    .level-B1 { background: #fff3d6; color: #aa6600; }
+    .level-B2 { background: #ffe8e8; color: #aa0000; }
+
+    /* ============================================
+       炎エフェクト・連続正解
+       ============================================ */
+    .streak-popup {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 14px 18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+      font-family: var(--font-jp);
+      font-size: 0.9rem;
+      font-weight: 700;
+      z-index: 200;
+      animation: popup-bounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @keyframes popup-bounce {
+      0% { opacity: 0; transform: translateX(50px) scale(0.8); }
+      100% { opacity: 1; transform: translateX(0) scale(1); }
+    }
+    .popup-fadeout {
+      animation: popup-fadeout 0.5s ease forwards;
+    }
+    @keyframes popup-fadeout {
+      to { opacity: 0; transform: translateY(-10px); }
+    }
+
+    /* ============================================
+       復習リスト
+       ============================================ */
+    .review-list {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: 0 2px 12px var(--color-shadow);
+    }
+    .review-list-title {
+      font-family: var(--font-jp);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--color-error);
+      margin-bottom: 12px;
+    }
+    .review-word-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      background: var(--color-bg);
+      margin-bottom: 6px;
+      font-family: var(--font-jp);
+      font-size: 0.85rem;
+    }
+    .review-word-en { font-family: var(--font-en); font-weight: 700; }
+    .review-word-jp { color: #666; }
+
+    /* ============================================
+       フッター
+       ============================================ */
+    .app-footer {
+      background: white;
+      border-top: 2px solid #f0ead6;
+      padding: 16px 20px;
+      text-align: center;
+      margin-top: 40px;
+    }
+    .footer-copyright {
+      font-family: var(--font-jp);
+      font-size: 0.7rem;
+      color: #aaa;
+      line-height: 1.8;
+    }
+
+    /* ============================================
+       レスポンシブ対応
+       ============================================ */
+    @media (max-width: 600px) {
+      .app-title { font-size: 1.4rem; }
+      .header-mascot { width: 42px; height: 42px; }
+      .card-word { font-size: 1.7rem; }
+      .quiz-word { font-size: 1.8rem; }
+      .quiz-choices { grid-template-columns: 1fr; }
+      .flashcard-scene { height: 220px; }
+      .stats-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    /* ============================================
+       アニメーション補助
+       ============================================ */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.4s ease; }
+
+    @keyframes correct-flash {
+      0% { background: white; }
+      30% { background: #e8f8ea; }
+      100% { background: white; }
+    }
+    .correct-flash { animation: correct-flash 0.6s ease; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================
+     ヘッダー
+     ============================================ -->
+<header class="app-header">
+  <div class="header-left">
+    <!-- マスコット：通常表情（小） -->
+    <svg class="header-mascot" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <!-- 体 -->
+      <ellipse cx="50" cy="62" rx="30" ry="28" fill="#FFD93D"/>
+      <!-- 頭 -->
+      <circle cx="50" cy="38" r="24" fill="#FFD93D"/>
+      <!-- アホ毛 -->
+      <path d="M50 14 Q54 5 50 0 Q46 5 50 14" fill="#FFD93D" stroke="#E5C200" stroke-width="1"/>
+      <!-- 左目 -->
+      <circle cx="41" cy="35" r="7" fill="white"/>
+      <circle cx="42" cy="35" r="4" fill="#2D2D2D"/>
+      <circle cx="43" cy="33" r="1.5" fill="white"/>
+      <!-- 右目 -->
+      <circle cx="59" cy="35" r="7" fill="white"/>
+      <circle cx="60" cy="35" r="4" fill="#2D2D2D"/>
+      <circle cx="61" cy="33" r="1.5" fill="white"/>
+      <!-- くちばし -->
+      <ellipse cx="50" cy="45" rx="6" ry="4" fill="#FF8C00"/>
+      <!-- 左翼 -->
+      <ellipse cx="22" cy="62" rx="9" ry="14" fill="#FFC800" transform="rotate(-15 22 62)"/>
+      <!-- 右翼 -->
+      <ellipse cx="78" cy="62" rx="9" ry="14" fill="#FFC800" transform="rotate(15 78 62)"/>
+      <!-- 左足 -->
+      <rect x="38" y="88" width="8" height="6" rx="2" fill="#FF8C00"/>
+      <rect x="34" y="92" width="5" height="3" rx="1" fill="#FF8C00"/>
+      <!-- 右足 -->
+      <rect x="54" y="88" width="8" height="6" rx="2" fill="#FF8C00"/>
+      <rect x="61" y="92" width="5" height="3" rx="1" fill="#FF8C00"/>
+    </svg>
+    <div>
+      <div class="app-title">ピヨ単</div>
+      <div class="app-subtitle">英語単語学習アプリ</div>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="streak-badge" id="headerStreak">🔥 <span id="streakDays">0</span>日連続</div>
+    <div class="goal-badge">🎯 <span id="todayCount">0</span>/<span id="dailyGoal">20</span></div>
+  </div>
+</header>
+
+<!-- ============================================
+     ナビゲーション
+     ============================================ -->
+<nav class="nav-tabs">
+  <button class="nav-tab active" onclick="showScreen('home')" id="tab-home">🏠 ホーム</button>
+  <button class="nav-tab" onclick="showScreen('flashcard')" id="tab-flashcard">🃏 フラッシュカード</button>
+  <button class="nav-tab" onclick="showScreen('quiz')" id="tab-quiz">✏️ クイズ</button>
+  <button class="nav-tab" onclick="showScreen('import')" id="tab-import">📂 インポート</button>
+</nav>
+
+<!-- ============================================
+     メインコンテンツ
+     ============================================ -->
+<div class="main-content">
+
+  <!-- ホーム画面 -->
+  <div class="screen active" id="screen-home">
+    <div class="home-welcome">
+      <!-- ピヨ：通常表情（大） -->
+      <svg class="home-piyo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <ellipse cx="60" cy="80" rx="36" ry="32" fill="#FFD93D"/>
+        <circle cx="60" cy="46" r="30" fill="#FFD93D"/>
+        <!-- アホ毛 -->
+        <path d="M60 16 Q66 3 60 -2 Q54 3 60 16" fill="#FFD93D" stroke="#E5C200" stroke-width="1.5"/>
+        <!-- 左目 -->
+        <circle cx="49" cy="42" r="9" fill="white"/>
+        <circle cx="50.5" cy="42" r="5.5" fill="#2D2D2D"/>
+        <circle cx="52" cy="40" r="2" fill="white"/>
+        <!-- 右目 -->
+        <circle cx="71" cy="42" r="9" fill="white"/>
+        <circle cx="72.5" cy="42" r="5.5" fill="#2D2D2D"/>
+        <circle cx="74" cy="40" r="2" fill="white"/>
+        <!-- 笑顔の口 -->
+        <path d="M52 55 Q60 62 68 55" stroke="#E5A000" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- くちばし -->
+        <ellipse cx="60" cy="54" rx="7" ry="5" fill="#FF8C00"/>
+        <!-- 左翼 -->
+        <ellipse cx="26" cy="78" rx="11" ry="17" fill="#FFC800" transform="rotate(-15 26 78)"/>
+        <!-- 右翼 -->
+        <ellipse cx="94" cy="78" rx="11" ry="17" fill="#FFC800" transform="rotate(15 94 78)"/>
+        <!-- 左足 -->
+        <rect x="44" y="108" width="10" height="8" rx="2" fill="#FF8C00"/>
+        <rect x="39" y="114" width="7" height="4" rx="1" fill="#FF8C00"/>
+        <!-- 右足 -->
+        <rect x="66" y="108" width="10" height="8" rx="2" fill="#FF8C00"/>
+        <rect x="74" y="114" width="7" height="4" rx="1" fill="#FF8C00"/>
+      </svg>
+      <p class="home-greeting" id="homeGreeting">今日も一緒にがんばるピヨ！</p>
+      <p class="home-submsg" id="homeWordCount">単語データ読み込み中...</p>
+    </div>
+
+    <!-- モード選択 -->
+    <div class="home-cards">
+      <div class="home-mode-card" onclick="startFlashcard()">
+        <div class="mode-icon">🃏</div>
+        <div class="mode-name">フラッシュカード</div>
+        <div class="mode-desc">カードをめくって<br>単語を覚えよう！</div>
+      </div>
+      <div class="home-mode-card" onclick="startQuiz()">
+        <div class="mode-icon">✏️</div>
+        <div class="mode-name">4択クイズ</div>
+        <div class="mode-desc">4つの選択肢から<br>正しい意味を選ぼう！</div>
+      </div>
+    </div>
+
+    <!-- フィルターバー -->
+    <div class="filter-bar">
+      <div class="filter-bar-title">レベルフィルター</div>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="setLevelFilter('all', this)">全レベル</button>
+        <button class="filter-btn" onclick="setLevelFilter('A1', this)">A1 中1基礎</button>
+        <button class="filter-btn" onclick="setLevelFilter('A2', this)">A2 中2〜3</button>
+        <button class="filter-btn" onclick="setLevelFilter('B1', this)">B1 高1〜2</button>
+        <button class="filter-btn" onclick="setLevelFilter('B2', this)">B2 高2〜3</button>
+        <span class="word-count-display" id="filteredCount">0語</span>
+      </div>
+    </div>
+
+    <!-- 統計 -->
+    <div class="home-stats">
+      <div class="home-stats-title">📊 今日の学習記録</div>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-value" id="statTodayLearned">0</div>
+          <div class="stat-label">今日覚えた</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statTotalLearned">0</div>
+          <div class="stat-label">累計単語</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="statAccuracy">-</div>
+          <div class="stat-label">正解率</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- フラッシュカード画面 -->
+  <div class="screen" id="screen-flashcard">
+    <div class="mode-header">
+      <div class="mode-title">🃏 フラッシュカードモード</div>
+      <button class="back-btn" onclick="showScreen('home')">← ホームへ</button>
+    </div>
+
+    <!-- フラッシュカード内部コンテンツ -->
+    <div id="flashcard-content">
+      <!-- プログレス -->
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="fcProgressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-info">
+        <span><strong id="fcCurrent">1</strong> / <strong id="fcTotal">0</strong> 枚</span>
+        <span>✅ <strong id="fcCorrect">0</strong> 語 理解済み</span>
+      </div>
+
+      <!-- カード -->
+      <p class="flip-hint">タップしてめくる ↕</p>
+      <div class="flashcard-scene">
+        <div class="flashcard" id="flashcard" onclick="flipCard()">
+          <div class="card-face card-front">
+            <div class="card-label">ENGLISH</div>
+            <div class="card-word" id="fcWord">apple</div>
+            <div class="card-pos" id="fcPos">noun</div>
+            <span class="card-level-badge level-A1" id="fcLevel">A1</span>
+            <button class="speak-btn" onclick="event.stopPropagation(); speakWord()" title="発音を聞く">🔊</button>
+          </div>
+          <div class="card-face card-back">
+            <div class="card-label">日本語</div>
+            <div class="card-meaning" id="fcMeaning">りんご</div>
+            <div class="card-example" id="fcExample">例文がここに表示されます。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 判定ボタン -->
+      <div class="flashcard-actions" id="fcActions" style="display:none">
+        <button class="btn-again" onclick="cardJudge(false)">😅 もう一度</button>
+        <button class="btn-got-it" onclick="cardJudge(true)">✅ わかった！</button>
+      </div>
+
+      <!-- ピヨフィードバック -->
+      <div class="piyo-feedback" id="fcFeedback">
+        <svg class="piyo-feedback-img" id="fcPiyoImg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="piyo-message" id="fcPiyoMsg">カードをタップしてめくってね！</div>
+      </div>
+    </div>
+
+    <!-- 完了画面 -->
+    <div class="complete-screen hidden" id="flashcard-complete">
+      <svg class="complete-piyo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" id="completePiyoFC"></svg>
+      <div class="complete-title" id="completeTitle">🎉 おつかれさま！</div>
+      <div class="complete-score" id="completeScore">85%</div>
+      <div class="complete-detail" id="completeDetail">20語中 17語 理解しました！</div>
+      <div class="complete-actions">
+        <button class="btn-primary" onclick="restartFlashcard()">🔄 もう一度</button>
+        <button class="btn-secondary" onclick="showScreen('quiz')">✏️ クイズへ</button>
+        <button class="btn-secondary" onclick="showScreen('home')">🏠 ホームへ</button>
+      </div>
+      <div style="margin-top:24px" id="reviewListWrap"></div>
+    </div>
+  </div>
+
+  <!-- クイズ画面 -->
+  <div class="screen" id="screen-quiz">
+    <div class="mode-header">
+      <div class="mode-title">✏️ 4択クイズモード</div>
+      <button class="back-btn" onclick="showScreen('home')">← ホームへ</button>
+    </div>
+
+    <!-- クイズ内部 -->
+    <div id="quiz-content">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="qzProgressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-info">
+        <span><strong id="qzCurrent">1</strong> / <strong id="qzTotal">0</strong> 問</span>
+        <span>✅ <strong id="qzCorrect">0</strong> 正解</span>
+      </div>
+
+      <div class="quiz-card" id="quizCard">
+        <div class="quiz-question-label">次の英単語の意味は？</div>
+        <div class="quiz-word" id="qzWord">example</div>
+        <div class="quiz-word-pos" id="qzPos">noun</div>
+        <button class="speak-btn" style="position:relative;margin:10px auto 0;display:flex;" onclick="speakQuizWord()" title="発音を聞く">🔊</button>
+      </div>
+
+      <!-- 4択 -->
+      <div class="quiz-choices" id="quizChoices"></div>
+
+      <!-- 解説 -->
+      <div class="quiz-explanation" id="quizExplanation">
+        <div class="ex-label">💡 例文</div>
+        <div id="quizExampleText"></div>
+      </div>
+
+      <!-- 次へボタン -->
+      <button class="quiz-next-btn" id="quizNextBtn" onclick="nextQuizQuestion()">次の問題へ →</button>
+
+      <!-- フィードバック -->
+      <div class="piyo-feedback" id="qzFeedback" style="margin-top:16px">
+        <svg class="piyo-feedback-img" id="qzPiyoImg" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div class="piyo-message" id="qzPiyoMsg">正しい意味を選んでね！</div>
+      </div>
+    </div>
+
+    <!-- 完了画面 -->
+    <div class="complete-screen hidden" id="quiz-complete">
+      <svg class="complete-piyo" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" id="completePiyoQZ"></svg>
+      <div class="complete-title">📝 クイズ完了！</div>
+      <div class="complete-score" id="qzCompleteScore">0%</div>
+      <div class="complete-detail" id="qzCompleteDetail"></div>
+      <div class="complete-actions">
+        <button class="btn-primary" onclick="restartQuiz()">🔄 もう一度</button>
+        <button class="btn-secondary" onclick="showScreen('flashcard')">🃏 フラッシュカードへ</button>
+        <button class="btn-secondary" onclick="showScreen('home')">🏠 ホームへ</button>
+      </div>
+      <div style="margin-top:24px" id="qzReviewListWrap"></div>
+    </div>
+  </div>
+
+  <!-- インポート画面 -->
+  <div class="screen" id="screen-import">
+    <div class="mode-header">
+      <div class="mode-title">📂 CSVインポート</div>
+      <button class="back-btn" onclick="showScreen('home')">← ホームへ</button>
+    </div>
+
+    <div class="import-error" id="importError"></div>
+    <div class="import-success" id="importSuccess">✅ <span id="importSuccessMsg"></span></div>
+
+    <!-- ドラッグ&ドロップエリア -->
+    <div class="import-area" id="importArea" onclick="document.getElementById('csvFileInput').click()">
+      <div class="import-icon">📁</div>
+      <div class="import-title">CSVファイルをドラッグ&ドロップ</div>
+      <div class="import-sub">または下のボタンでファイルを選択（UTF-8形式）</div>
+      <div class="import-format">
+        word,meaning,level,part_of_speech,example<br>
+        abandon,捨てる・放棄する,B1,verb,He abandoned the project.<br>
+        ability,能力・才能,A2,noun,She has great ability.
+      </div>
+      <button class="btn-file-select" onclick="event.stopPropagation(); document.getElementById('csvFileInput').click()">
+        📂 ファイルを選択
+      </button>
+    </div>
+    <input type="file" id="csvFileInput" accept=".csv" style="display:none" onchange="handleFileSelect(event)">
+
+    <!-- プレビュー -->
+    <div class="import-preview" id="importPreview">
+      <div class="preview-title">📋 プレビュー（先頭10件）</div>
+      <div style="overflow-x:auto">
+        <table class="preview-table" id="previewTable"></table>
+      </div>
+      <div style="margin-top:12px;font-family:var(--font-jp);font-size:0.82rem;color:#888" id="previewTotal"></div>
+      <button class="btn-primary" style="margin-top:14px" onclick="applyImport()">✅ この単語データを適用する</button>
+      <button class="btn-secondary" style="margin-top:10px;margin-left:10px" onclick="resetToBuiltin()">🔄 初期データに戻す</button>
+    </div>
+
+    <!-- 使い方 -->
+    <div style="background:white;border-radius:var(--radius-md);padding:20px;box-shadow:0 2px 12px var(--color-shadow);margin-top:16px">
+      <div style="font-family:var(--font-jp);font-size:0.88rem;font-weight:700;margin-bottom:12px">📖 CSVフォーマットの説明</div>
+      <div style="font-family:var(--font-jp);font-size:0.82rem;color:#666;line-height:1.8">
+        <strong>列1：word</strong> — 英単語（必須）<br>
+        <strong>列2：meaning</strong> — 日本語の意味（必須）<br>
+        <strong>列3：level</strong> — レベル（A1/A2/B1/B2、省略可）<br>
+        <strong>列4：part_of_speech</strong> — 品詞（noun/verb/adj/adv等、省略可）<br>
+        <strong>列5：example</strong> — 例文（省略可）<br>
+        <br>
+        ⚠️ 1行目はヘッダー行（word,meaning,...）として扱います。<br>
+        ⚠️ 文字コードはUTF-8で保存してください。<br>
+        ⚠️ 最低10語以上のデータが必要です。
+      </div>
+    </div>
+  </div>
+
+</div><!-- /.main-content -->
+
+<!-- ============================================
+     フッター
+     ============================================ -->
+<footer class="app-footer">
+  <div class="footer-copyright">
+    語彙データ：CEFR-J Wordlist Version 1.6（東京外国語大学投野由紀夫研究室）<br>
+    New General Service List 1.2（Browne &amp; Culligan, CC BY-SA 4.0）<br>
+    このアプリは教育目的で作成されました。
+  </div>
+</footer>
+
+<!-- 連続正解ポップアップ -->
+<div id="streakPopup" class="streak-popup hidden"></div>
+
+<!-- ============================================
+     JavaScript
+     ============================================ -->
+<script>
+/* ============================================
+   定数・設定
+   ============================================ */
+const DAILY_GOAL = 20; // 1日の目標語数
+
+// ピヨのセリフ
+const correctMessages = ["ピヨ！すごいっ！", "やったね！完璧！🎉", "その調子ピヨ〜！", "天才かも！！", "ナイスピヨ！！"];
+const wrongMessages   = ["ドンマイピヨ…", "次はできるよ！", "もう一回チャレンジ！", "一緒に覚えよ〜ピヨ"];
+const startMessages   = ["今日も一緒にがんばるピヨ！", "どの単語から始める？", "ピヨ！やる気満々だよ！"];
+const thinkMessages   = ["どれかな〜？", "一緒に考えるピヨ！", "よく考えてピヨ！"];
+
+/* ============================================
+   組み込みサンプル語彙データ（約100語）
+   CEFR-J Wordlist / NGSL 参考
+   ============================================ */
+const BUILTIN_WORDS = [
+  // A1レベル（中1基礎）
+  {word:"apple",      meaning:"りんご",          level:"A1", pos:"noun",  example:"I eat an apple every day."},
+  {word:"book",       meaning:"本",              level:"A1", pos:"noun",  example:"She reads a book before bed."},
+  {word:"cat",        meaning:"ねこ",            level:"A1", pos:"noun",  example:"The cat is sleeping."},
+  {word:"dog",        meaning:"いぬ",            level:"A1", pos:"noun",  example:"I have a dog named Max."},
+  {word:"eat",        meaning:"食べる",          level:"A1", pos:"verb",  example:"We eat dinner at six."},
+  {word:"family",     meaning:"家族",            level:"A1", pos:"noun",  example:"My family is very happy."},
+  {word:"go",         meaning:"行く",            level:"A1", pos:"verb",  example:"Let's go to school."},
+  {word:"happy",      meaning:"幸せな・うれしい",level:"A1", pos:"adj",   example:"She is happy today."},
+  {word:"house",      meaning:"家",              level:"A1", pos:"noun",  example:"They live in a big house."},
+  {word:"like",       meaning:"好きである",      level:"A1", pos:"verb",  example:"I like music very much."},
+  {word:"milk",       meaning:"牛乳",            level:"A1", pos:"noun",  example:"Please drink your milk."},
+  {word:"name",       meaning:"名前",            level:"A1", pos:"noun",  example:"My name is Akira."},
+  {word:"open",       meaning:"開ける・開いた",  level:"A1", pos:"verb",  example:"Please open the door."},
+  {word:"play",       meaning:"遊ぶ・演奏する",  level:"A1", pos:"verb",  example:"The children play in the park."},
+  {word:"red",        meaning:"赤い",            level:"A1", pos:"adj",   example:"She wore a red dress."},
+  {word:"run",        meaning:"走る",            level:"A1", pos:"verb",  example:"He can run very fast."},
+  {word:"school",     meaning:"学校",            level:"A1", pos:"noun",  example:"I go to school by bus."},
+  {word:"small",      meaning:"小さい",          level:"A1", pos:"adj",   example:"The kitten is very small."},
+  {word:"talk",       meaning:"話す",            level:"A1", pos:"verb",  example:"We talk every day."},
+  {word:"water",      meaning:"水",              level:"A1", pos:"noun",  example:"Drink plenty of water."},
+  {word:"year",       meaning:"年・年間",        level:"A1", pos:"noun",  example:"She is ten years old."},
+  {word:"brother",    meaning:"兄・弟",          level:"A1", pos:"noun",  example:"My brother is very tall."},
+  {word:"sister",     meaning:"姉・妹",          level:"A1", pos:"noun",  example:"My sister likes painting."},
+  {word:"food",       meaning:"食べ物",          level:"A1", pos:"noun",  example:"Japanese food is delicious."},
+  {word:"friend",     meaning:"友達",            level:"A1", pos:"noun",  example:"She is my best friend."},
+  // A2レベル（中2〜3）
+  {word:"ability",    meaning:"能力・才能",      level:"A2", pos:"noun",  example:"She has the ability to learn quickly."},
+  {word:"change",     meaning:"変える・変化",    level:"A2", pos:"verb",  example:"Things change over time."},
+  {word:"decide",     meaning:"決める",          level:"A2", pos:"verb",  example:"He decided to study abroad."},
+  {word:"enjoy",      meaning:"楽しむ",          level:"A2", pos:"verb",  example:"I enjoy playing soccer."},
+  {word:"follow",     meaning:"従う・ついていく",level:"A2", pos:"verb",  example:"Follow the instructions carefully."},
+  {word:"guess",      meaning:"推測する",        level:"A2", pos:"verb",  example:"Can you guess the answer?"},
+  {word:"help",       meaning:"助ける・助け",    level:"A2", pos:"verb",  example:"Please help me with this."},
+  {word:"instead",    meaning:"その代わりに",    level:"A2", pos:"adv",   example:"I'll walk instead of driving."},
+  {word:"join",       meaning:"加わる・参加する",level:"A2", pos:"verb",  example:"Would you like to join us?"},
+  {word:"keep",       meaning:"保つ・続ける",    level:"A2", pos:"verb",  example:"Keep trying and you'll succeed."},
+  {word:"learn",      meaning:"学ぶ・覚える",    level:"A2", pos:"verb",  example:"I want to learn English."},
+  {word:"message",    meaning:"メッセージ・伝言",level:"A2", pos:"noun",  example:"She sent me a message."},
+  {word:"nature",     meaning:"自然・性質",      level:"A2", pos:"noun",  example:"I love spending time in nature."},
+  {word:"offer",      meaning:"申し出る・提供する",level:"A2",pos:"verb", example:"He offered to help me."},
+  {word:"practice",   meaning:"練習・実践する",  level:"A2", pos:"noun",  example:"Practice makes perfect."},
+  {word:"question",   meaning:"質問・疑問",      level:"A2", pos:"noun",  example:"Do you have any questions?"},
+  {word:"reach",      meaning:"届く・到着する",  level:"A2", pos:"verb",  example:"She can't reach the top shelf."},
+  {word:"remember",   meaning:"覚えている・思い出す",level:"A2",pos:"verb",example:"Do you remember my name?"},
+  {word:"share",      meaning:"共有する・分かち合う",level:"A2",pos:"verb",example:"Let's share this pizza."},
+  {word:"travel",     meaning:"旅行する・旅行",  level:"A2", pos:"verb",  example:"I love to travel overseas."},
+  {word:"understand", meaning:"理解する",        level:"A2", pos:"verb",  example:"I don't understand this word."},
+  {word:"visit",      meaning:"訪問する・見舞う",level:"A2", pos:"verb",  example:"We visited Kyoto last summer."},
+  {word:"worry",      meaning:"心配する",        level:"A2", pos:"verb",  example:"Don't worry, everything is fine."},
+  {word:"exciting",   meaning:"わくわくさせる",  level:"A2", pos:"adj",   example:"The game was very exciting."},
+  {word:"important",  meaning:"重要な・大切な",  level:"A2", pos:"adj",   example:"Health is very important."},
+  // B1レベル（高1〜2）
+  {word:"abandon",    meaning:"捨てる・放棄する",level:"B1", pos:"verb",  example:"He abandoned the project halfway."},
+  {word:"achieve",    meaning:"達成する",        level:"B1", pos:"verb",  example:"She achieved her goal."},
+  {word:"benefit",    meaning:"利益・恩恵",      level:"B1", pos:"noun",  example:"Exercise has many health benefits."},
+  {word:"challenge",  meaning:"挑戦・困難",      level:"B1", pos:"noun",  example:"Learning a language is a challenge."},
+  {word:"compare",    meaning:"比較する",        level:"B1", pos:"verb",  example:"Compare the two prices."},
+  {word:"consider",   meaning:"考慮する",        level:"B1", pos:"verb",  example:"Consider all the options first."},
+  {word:"develop",    meaning:"発展させる・開発する",level:"B1",pos:"verb",example:"They developed a new product."},
+  {word:"effective",  meaning:"効果的な",        level:"B1", pos:"adj",   example:"This medicine is very effective."},
+  {word:"effort",     meaning:"努力・取り組み",  level:"B1", pos:"noun",  example:"Success requires a lot of effort."},
+  {word:"environment",meaning:"環境",            level:"B1", pos:"noun",  example:"We must protect the environment."},
+  {word:"experience", meaning:"経験・体験する",  level:"B1", pos:"noun",  example:"She has years of experience."},
+  {word:"focus",      meaning:"集中する・焦点",  level:"B1", pos:"verb",  example:"Focus on your studies."},
+  {word:"government", meaning:"政府・政治",      level:"B1", pos:"noun",  example:"The government passed a new law."},
+  {word:"improve",    meaning:"改善する・上達する",level:"B1",pos:"verb", example:"I want to improve my English."},
+  {word:"increase",   meaning:"増加する・増やす",level:"B1", pos:"verb",  example:"Sales increased by 20%."},
+  {word:"knowledge",  meaning:"知識",            level:"B1", pos:"noun",  example:"Knowledge is power."},
+  {word:"manage",     meaning:"管理する・なんとかする",level:"B1",pos:"verb",example:"She manages the whole team."},
+  {word:"opportunity",meaning:"機会・チャンス",  level:"B1", pos:"noun",  example:"This is a great opportunity."},
+  {word:"process",    meaning:"過程・処理する",  level:"B1", pos:"noun",  example:"The process takes three hours."},
+  {word:"reduce",     meaning:"減らす・削減する",level:"B1", pos:"verb",  example:"We must reduce carbon emissions."},
+  {word:"research",   meaning:"研究・調査する",  level:"B1", pos:"noun",  example:"She does research on climate."},
+  {word:"solve",      meaning:"解く・解決する",  level:"B1", pos:"verb",  example:"Can you solve this problem?"},
+  {word:"suggest",    meaning:"提案する・示唆する",level:"B1",pos:"verb", example:"I suggest we leave early."},
+  {word:"technology", meaning:"技術・テクノロジー",level:"B1",pos:"noun", example:"Technology is changing our lives."},
+  {word:"tradition",  meaning:"伝統・慣習",      level:"B1", pos:"noun",  example:"This is an old tradition."},
+  // B2レベル（高2〜3）
+  {word:"acquire",    meaning:"取得する・習得する",level:"B2",pos:"verb", example:"She acquired three languages."},
+  {word:"advocate",   meaning:"支持する・提唱者",level:"B2", pos:"verb",  example:"He advocates for human rights."},
+  {word:"ambiguous",  meaning:"あいまいな",      level:"B2", pos:"adj",   example:"The instructions were ambiguous."},
+  {word:"anticipate", meaning:"予期する・期待する",level:"B2",pos:"verb", example:"We anticipate a big demand."},
+  {word:"assumption", meaning:"仮定・思い込み",  level:"B2", pos:"noun",  example:"That's a wrong assumption."},
+  {word:"comprehend", meaning:"理解する",        level:"B2", pos:"verb",  example:"I can't comprehend this text."},
+  {word:"consequence",meaning:"結果・影響",      level:"B2", pos:"noun",  example:"Think about the consequences."},
+  {word:"consistent", meaning:"一貫した",        level:"B2", pos:"adj",   example:"She is consistent in her work."},
+  {word:"controversial",meaning:"論争の的な",    level:"B2", pos:"adj",   example:"It's a controversial topic."},
+  {word:"demonstrate",meaning:"実証する・示す",  level:"B2", pos:"verb",  example:"Let me demonstrate how it works."},
+  {word:"elaborate",  meaning:"詳しく述べる・精巧な",level:"B2",pos:"verb",example:"Please elaborate on your idea."},
+  {word:"establish",  meaning:"設立する・確立する",level:"B2",pos:"verb", example:"The school was established in 1900."},
+  {word:"evaluate",   meaning:"評価する",        level:"B2", pos:"verb",  example:"Evaluate the risks carefully."},
+  {word:"fundamental",meaning:"根本的な・基本の",level:"B2", pos:"adj",   example:"This is a fundamental problem."},
+  {word:"hypothesis", meaning:"仮説",            level:"B2", pos:"noun",  example:"The hypothesis was proven wrong."},
+  {word:"implement",  meaning:"実施する",        level:"B2", pos:"verb",  example:"We will implement the new policy."},
+  {word:"inevitable", meaning:"避けられない",    level:"B2", pos:"adj",   example:"Change is inevitable."},
+  {word:"integrate",  meaning:"統合する・組み込む",level:"B2",pos:"verb", example:"Integrate technology into learning."},
+  {word:"justify",    meaning:"正当化する",      level:"B2", pos:"verb",  example:"Can you justify your decision?"},
+  {word:"perspective",meaning:"視点・観点",      level:"B2", pos:"noun",  example:"Look at it from my perspective."},
+];
+
+/* ============================================
+   アプリ状態管理
+   ============================================ */
+let state = {
+  words: [],              // 現在使用中の単語データ（フィルター済み）
+  allWords: [],           // 全単語データ（フィルター前）
+  levelFilter: 'all',     // レベルフィルター
+  // フラッシュカード
+  fc: {
+    deck: [],             // 学習デッキ
+    againDeck: [],        // もう一度デッキ
+    currentIndex: 0,
+    correctCount: 0,
+    isFlipped: false,
+    wrongWords: [],
+  },
+  // クイズ
+  quiz: {
+    questions: [],
+    currentIndex: 0,
+    correctCount: 0,
+    answered: false,
+    wrongWords: [],
+  },
+  // 統計・ゲーミフィケーション
+  stats: {
+    todayLearned: 0,
+    totalLearned: 0,
+    totalAnswered: 0,
+    totalCorrect: 0,
+    streak: 0,
+    lastDate: '',
+    consecutiveCorrect: 0, // 連続正解数
+  },
+  // インポート用一時データ
+  importTemp: [],
+};
+
+/* ============================================
+   localStorage 読み書き
+   ============================================ */
+function saveStats() {
+  localStorage.setItem('piyotan_stats', JSON.stringify(state.stats));
+}
+function loadStats() {
+  const saved = localStorage.getItem('piyotan_stats');
+  if (saved) {
+    state.stats = Object.assign(state.stats, JSON.parse(saved));
+  }
+  // 日付チェック（日付が変わったら todayLearned リセット）
+  const today = new Date().toDateString();
+  if (state.stats.lastDate !== today) {
+    // 連続学習ストリーク計算
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (state.stats.lastDate === yesterday) {
+      state.stats.streak += 1;
+    } else if (state.stats.lastDate !== today) {
+      state.stats.streak = 0;
+    }
+    state.stats.todayLearned = 0;
+    state.stats.lastDate = today;
+    saveStats();
+  }
+}
+
+function saveCustomWords() {
+  localStorage.setItem('piyotan_words', JSON.stringify(state.allWords));
+}
+function loadCustomWords() {
+  const saved = localStorage.getItem('piyotan_words');
+  if (saved) {
+    try {
+      state.allWords = JSON.parse(saved);
+    } catch (e) {
+      state.allWords = [...BUILTIN_WORDS];
+    }
+  } else {
+    state.allWords = [...BUILTIN_WORDS];
+  }
+}
+
+/* ============================================
+   初期化
+   ============================================ */
+function init() {
+  loadStats();
+  loadCustomWords();
+  applyLevelFilter();
+  updateHeaderStats();
+  updateHomeStats();
+  updateHomeWordCount();
+  // 挨拶メッセージをランダムに
+  document.getElementById('homeGreeting').textContent =
+    startMessages[Math.floor(Math.random() * startMessages.length)];
+  // ピヨの初期状態を設定
+  setPiyoSVG(document.getElementById('fcPiyoImg'), 'think');
+  setPiyoSVG(document.getElementById('qzPiyoImg'), 'think');
+}
+
+/* ============================================
+   レベルフィルター適用
+   ============================================ */
+function setLevelFilter(level, btn) {
+  state.levelFilter = level;
+  // ボタンのアクティブ状態更新
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  applyLevelFilter();
+  updateHomeWordCount();
+  updateFilteredCount();
+}
+
+function applyLevelFilter() {
+  if (state.levelFilter === 'all') {
+    state.words = [...state.allWords];
+  } else {
+    state.words = state.allWords.filter(w => w.level === state.levelFilter);
+  }
+  updateFilteredCount();
+}
+
+function updateFilteredCount() {
+  const el = document.getElementById('filteredCount');
+  if (el) el.textContent = state.words.length + '語';
+}
+
+/* ============================================
+   ヘッダー・統計更新
+   ============================================ */
+function updateHeaderStats() {
+  document.getElementById('streakDays').textContent = state.stats.streak;
+  document.getElementById('todayCount').textContent = state.stats.todayLearned;
+  document.getElementById('dailyGoal').textContent = DAILY_GOAL;
+}
+function updateHomeStats() {
+  document.getElementById('statTodayLearned').textContent = state.stats.todayLearned;
+  document.getElementById('statTotalLearned').textContent = state.stats.totalLearned;
+  const acc = state.stats.totalAnswered > 0
+    ? Math.round(state.stats.totalCorrect / state.stats.totalAnswered * 100) + '%'
+    : '-';
+  document.getElementById('statAccuracy').textContent = acc;
+}
+function updateHomeWordCount() {
+  const el = document.getElementById('homeWordCount');
+  if (el) el.textContent = `現在 ${state.words.length} 語 学習中`;
+}
+
+/* ============================================
+   画面切り替え
+   ============================================ */
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (name === 'home') {
+    updateHomeStats();
+    updateHomeWordCount();
+    updateFilteredCount();
+  }
+}
+
+/* ============================================
+   ピヨSVG：表情バリエーション
+   ============================================ */
+function getPiyoSVG(expression) {
+  // 基本パーツ（体・頭・翼・足）は共通
+  const base = `
+    <ellipse cx="50" cy="62" rx="30" ry="28" fill="#FFD93D"/>
+    <circle cx="50" cy="38" r="24" fill="#FFD93D"/>
+    <path d="M50 14 Q54 5 50 0 Q46 5 50 14" fill="#FFD93D" stroke="#E5C200" stroke-width="1"/>
+  `;
+  const wings_normal = `
+    <ellipse cx="22" cy="62" rx="9" ry="14" fill="#FFC800" transform="rotate(-15 22 62)"/>
+    <ellipse cx="78" cy="62" rx="9" ry="14" fill="#FFC800" transform="rotate(15 78 62)"/>
+  `;
+  const wings_up = `
+    <ellipse cx="18" cy="50" rx="9" ry="14" fill="#FFC800" transform="rotate(-40 18 50)"/>
+    <ellipse cx="82" cy="50" rx="9" ry="14" fill="#FFC800" transform="rotate(40 82 50)"/>
+  `;
+  const feet = `
+    <rect x="38" y="88" width="8" height="6" rx="2" fill="#FF8C00"/>
+    <rect x="34" y="92" width="5" height="3" rx="1" fill="#FF8C00"/>
+    <rect x="54" y="88" width="8" height="6" rx="2" fill="#FF8C00"/>
+    <rect x="61" y="92" width="5" height="3" rx="1" fill="#FF8C00"/>
+  `;
+  const beak = `<ellipse cx="50" cy="45" rx="6" ry="4" fill="#FF8C00"/>`;
+  // 目のパーツ
+  const eyes_normal = `
+    <circle cx="41" cy="35" r="7" fill="white"/>
+    <circle cx="42" cy="35" r="4" fill="#2D2D2D"/>
+    <circle cx="43" cy="33" r="1.5" fill="white"/>
+    <circle cx="59" cy="35" r="7" fill="white"/>
+    <circle cx="60" cy="35" r="4" fill="#2D2D2D"/>
+    <circle cx="61" cy="33" r="1.5" fill="white"/>
+  `;
+  const eyes_happy = `
+    <circle cx="41" cy="35" r="7" fill="white"/>
+    <circle cx="42" cy="35" r="4.5" fill="#2D2D2D"/>
+    <circle cx="39.5" cy="32" r="2" fill="white"/>
+    <circle cx="43.5" cy="32" r="1.2" fill="white"/>
+    <circle cx="59" cy="35" r="7" fill="white"/>
+    <circle cx="60" cy="35" r="4.5" fill="#2D2D2D"/>
+    <circle cx="57.5" cy="32" r="2" fill="white"/>
+    <circle cx="61.5" cy="32" r="1.2" fill="white"/>
+  `;
+  const eyes_think = `
+    <circle cx="41" cy="35" r="7" fill="white"/>
+    <circle cx="42" cy="36" r="4" fill="#2D2D2D"/>
+    <circle cx="43" cy="34" r="1.5" fill="white"/>
+    <circle cx="59" cy="35" r="7" fill="white"/>
+    <circle cx="60" cy="34" r="4" fill="#2D2D2D"/>
+    <circle cx="61" cy="33" r="1.5" fill="white"/>
+    <text x="62" y="22" font-size="12" fill="#FFD93D" stroke="#E5C200" stroke-width="0.5">?</text>
+  `;
+  const eyes_sad = `
+    <circle cx="41" cy="36" r="7" fill="white"/>
+    <circle cx="41" cy="37" r="4" fill="#2D2D2D"/>
+    <circle cx="42" cy="35" r="1.5" fill="white"/>
+    <circle cx="59" cy="36" r="7" fill="white"/>
+    <circle cx="59" cy="37" r="4" fill="#2D2D2D"/>
+    <circle cx="60" cy="35" r="1.5" fill="white"/>
+    <ellipse cx="44" cy="44" rx="2" ry="3" fill="#66BBFF" opacity="0.7"/>
+    <ellipse cx="58" cy="44" rx="2" ry="3" fill="#66BBFF" opacity="0.7"/>
+  `;
+  const eyes_cheer = `
+    <circle cx="41" cy="34" r="7" fill="white"/>
+    <circle cx="42" cy="34" r="4.5" fill="#2D2D2D"/>
+    <circle cx="39.5" cy="31.5" r="2" fill="white"/>
+    <circle cx="59" cy="34" r="7" fill="white"/>
+    <circle cx="60" cy="34" r="4.5" fill="#2D2D2D"/>
+    <circle cx="57.5" cy="31.5" r="2" fill="white"/>
+  `;
+  // 口のパーツ
+  const mouth_smile = `<path d="M44 43 Q50 48 56 43" stroke="#E5A000" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  const mouth_happy = `<path d="M43 42 Q50 50 57 42" stroke="#E5A000" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+  const mouth_sad   = `<path d="M44 46 Q50 42 56 46" stroke="#E5A000" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+  const mouth_open  = `<ellipse cx="50" cy="45" rx="5" ry="4" fill="#E5A000"/>`;
+
+  switch(expression) {
+    case 'normal':
+      return base + wings_normal + eyes_normal + beak + mouth_smile + feet;
+    case 'happy':
+      return base + wings_up + eyes_happy + beak + mouth_happy + feet +
+        `<text x="12" y="30" font-size="14">🌟</text><text x="70" y="30" font-size="14">🌟</text>`;
+    case 'think':
+      return base + wings_normal + eyes_think + beak + feet;
+    case 'sad':
+      return base + wings_normal + eyes_sad + beak + mouth_sad + feet;
+    case 'cheer':
+      return base + wings_up + eyes_cheer + beak + mouth_open + feet +
+        `<text x="5" y="80" font-size="16">🔥</text><text x="73" y="80" font-size="16">🔥</text>`;
+    default:
+      return base + wings_normal + eyes_normal + beak + mouth_smile + feet;
+  }
+}
+
+function setPiyoSVG(el, expression) {
+  if (el) el.innerHTML = getPiyoSVG(expression);
+}
+
+/* ============================================
+   Web Speech API：音声読み上げ
+   ============================================ */
+function speakText(text) {
+  if (!('speechSynthesis' in window)) {
+    console.warn('このブラウザはWeb Speech APIに対応していません。');
+    return;
+  }
+  // 再生中のものを停止
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+  utterance.rate = 0.85;
+  utterance.pitch = 1;
+  window.speechSynthesis.speak(utterance);
+}
+function speakWord() {
+  const word = document.getElementById('fcWord').textContent;
+  speakText(word);
+}
+function speakQuizWord() {
+  const word = document.getElementById('qzWord').textContent;
+  speakText(word);
+}
+
+/* ============================================
+   連続正解ポップアップ
+   ============================================ */
+function showStreakPopup(count) {
+  const popup = document.getElementById('streakPopup');
+  popup.classList.remove('hidden', 'popup-fadeout');
+  if (count >= 5) {
+    popup.innerHTML = '🔥🔥 ' + count + '連続正解！すごすぎる！';
+    setPiyoSVG(document.getElementById('fcPiyoImg'), 'cheer');
+    setPiyoSVG(document.getElementById('qzPiyoImg'), 'cheer');
+  } else {
+    popup.innerHTML = '🔥 ' + count + '連続正解！';
+    setPiyoSVG(document.getElementById('fcPiyoImg'), 'happy');
+    setPiyoSVG(document.getElementById('qzPiyoImg'), 'happy');
+  }
+  setTimeout(() => {
+    popup.classList.add('popup-fadeout');
+    setTimeout(() => popup.classList.add('hidden'), 500);
+  }, 2200);
+}
+
+/* ============================================
+   フラッシュカードモード
+   ============================================ */
+function startFlashcard() {
+  if (state.words.length < 2) {
+    alert('単語が少なすぎます。少なくとも2語以上必要です。\nCSVをインポートするか、レベルフィルターを変更してください。');
+    return;
+  }
+  showScreen('flashcard');
+  // デッキをシャッフル（最大40枚）
+  const shuffled = shuffle([...state.words]).slice(0, 40);
+  state.fc = {
+    deck: shuffled,
+    againDeck: [],
+    currentIndex: 0,
+    correctCount: 0,
+    isFlipped: false,
+    wrongWords: [],
+  };
+  document.getElementById('fcTotal').textContent = shuffled.length;
+  document.getElementById('flashcard-content').classList.remove('hidden');
+  document.getElementById('flashcard-complete').classList.add('hidden');
+  renderFlashcard();
+}
+
+function renderFlashcard() {
+  const fc = state.fc;
+  if (fc.currentIndex >= fc.deck.length) {
+    // セッション完了
+    if (fc.againDeck.length > 0) {
+      // 「もう一度」の単語を追加して続ける
+      fc.deck = [...fc.againDeck];
+      fc.againDeck = [];
+      fc.currentIndex = 0;
+    } else {
+      showFlashcardComplete();
+      return;
+    }
+  }
+  const word = fc.deck[fc.currentIndex];
+  document.getElementById('fcWord').textContent = word.word;
+  document.getElementById('fcPos').textContent = word.pos || '';
+  document.getElementById('fcMeaning').textContent = word.meaning;
+  document.getElementById('fcExample').textContent = word.example || '';
+  // レベルバッジ
+  const badge = document.getElementById('fcLevel');
+  badge.textContent = word.level || '';
+  badge.className = 'card-level-badge level-' + (word.level || 'A1');
+  // カードをリセット
+  const card = document.getElementById('flashcard');
+  card.classList.remove('flipped');
+  fc.isFlipped = false;
+  document.getElementById('fcActions').style.display = 'none';
+  // プログレス更新
+  const total = fc.deck.length;
+  const pct = Math.round(fc.currentIndex / total * 100);
+  document.getElementById('fcProgressFill').style.width = pct + '%';
+  document.getElementById('fcCurrent').textContent = fc.currentIndex + 1;
+  document.getElementById('fcTotal').textContent = total;
+  document.getElementById('fcCorrect').textContent = fc.correctCount;
+  // ピヨをリセット
+  setPiyoSVG(document.getElementById('fcPiyoImg'), 'think');
+  document.getElementById('fcPiyoMsg').textContent = thinkMessages[Math.floor(Math.random() * thinkMessages.length)];
+}
+
+function flipCard() {
+  const fc = state.fc;
+  const card = document.getElementById('flashcard');
+  if (!fc.isFlipped) {
+    card.classList.add('flipped');
+    fc.isFlipped = true;
+    // めくったら判定ボタンを表示
+    setTimeout(() => {
+      document.getElementById('fcActions').style.display = 'flex';
+      // 自動読み上げ
+      const word = fc.deck[fc.currentIndex];
+      speakText(word.word);
+    }, 300);
+    setPiyoSVG(document.getElementById('fcPiyoImg'), 'normal');
+    document.getElementById('fcPiyoMsg').textContent = 'わかった？もう一度？';
+  }
+}
+
+function cardJudge(correct) {
+  const fc = state.fc;
+  const word = fc.deck[fc.currentIndex];
+  if (correct) {
+    fc.correctCount++;
+    state.stats.consecutiveCorrect++;
+    state.stats.totalCorrect++;
+    state.stats.todayLearned++;
+    state.stats.totalLearned++;
+    state.stats.totalAnswered++;
+    setPiyoSVG(document.getElementById('fcPiyoImg'), 'happy');
+    document.getElementById('fcPiyoMsg').textContent =
+      correctMessages[Math.floor(Math.random() * correctMessages.length)];
+    // 連続正解チェック
+    if (state.stats.consecutiveCorrect >= 3) {
+      showStreakPopup(state.stats.consecutiveCorrect);
+    }
+  } else {
+    fc.wrongWords.push(word);
+    fc.againDeck.push(word);
+    state.stats.consecutiveCorrect = 0;
+    state.stats.totalAnswered++;
+    setPiyoSVG(document.getElementById('fcPiyoImg'), 'sad');
+    document.getElementById('fcPiyoMsg').textContent =
+      wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+  }
+  saveStats();
+  updateHeaderStats();
+  fc.currentIndex++;
+  setTimeout(renderFlashcard, 700);
+}
+
+function showFlashcardComplete() {
+  document.getElementById('flashcard-content').classList.add('hidden');
+  document.getElementById('flashcard-complete').classList.remove('hidden');
+  const fc = state.fc;
+  const total = fc.deck.length + fc.correctCount;
+  const pct = total > 0 ? Math.round(fc.correctCount / (fc.correctCount + fc.wrongWords.length) * 100) : 0;
+  document.getElementById('completeScore').textContent = pct + '%';
+  document.getElementById('completeDetail').textContent =
+    `${fc.correctCount} 語 理解 / ${fc.wrongWords.length} 語 要復習`;
+  // 完了ピヨ
+  const completePiyo = document.getElementById('completePiyoFC');
+  setPiyoSVG(completePiyo, pct >= 80 ? 'cheer' : pct >= 50 ? 'happy' : 'sad');
+  // タイトル
+  document.getElementById('completeTitle').textContent =
+    pct >= 80 ? '🎉 すばらしい！' : pct >= 50 ? '👍 おつかれさま！' : '💪 もう一度がんばろう！';
+  // 復習リスト
+  renderReviewList('reviewListWrap', fc.wrongWords);
+  saveStats();
+}
+
+function restartFlashcard() {
+  startFlashcard();
+}
+
+/* ============================================
+   クイズモード
+   ============================================ */
+function startQuiz() {
+  if (state.words.length < 4) {
+    alert('クイズには最低4語が必要です。\nCSVをインポートするか、レベルフィルターを変更してください。');
+    return;
+  }
+  showScreen('quiz');
+  // 問題をシャッフル（最大20問）
+  const shuffled = shuffle([...state.words]).slice(0, 20);
+  state.quiz = {
+    questions: shuffled,
+    currentIndex: 0,
+    correctCount: 0,
+    answered: false,
+    wrongWords: [],
+  };
+  document.getElementById('qzTotal').textContent = shuffled.length;
+  document.getElementById('quiz-content').classList.remove('hidden');
+  document.getElementById('quiz-complete').classList.add('hidden');
+  renderQuizQuestion();
+}
+
+function renderQuizQuestion() {
+  const quiz = state.quiz;
+  if (quiz.currentIndex >= quiz.questions.length) {
+    showQuizComplete();
+    return;
+  }
+  const q = quiz.questions[quiz.currentIndex];
+  quiz.answered = false;
+  document.getElementById('qzWord').textContent = q.word;
+  document.getElementById('qzPos').textContent = q.pos || '';
+  // プログレス
+  const pct = Math.round(quiz.currentIndex / quiz.questions.length * 100);
+  document.getElementById('qzProgressFill').style.width = pct + '%';
+  document.getElementById('qzCurrent').textContent = quiz.currentIndex + 1;
+  document.getElementById('qzCorrect').textContent = quiz.correctCount;
+  // 選択肢生成（正解1つ + ダミー3つ）
+  const choices = generateChoices(q);
+  const choicesEl = document.getElementById('quizChoices');
+  choicesEl.innerHTML = '';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-choice';
+    btn.textContent = c.meaning;
+    btn.onclick = () => selectQuizChoice(c, q, btn);
+    choicesEl.appendChild(btn);
+  });
+  // 解説・次へボタンを隠す
+  document.getElementById('quizExplanation').style.display = 'none';
+  document.getElementById('quizNextBtn').style.display = 'none';
+  // ピヨ
+  setPiyoSVG(document.getElementById('qzPiyoImg'), 'think');
+  document.getElementById('qzPiyoMsg').textContent =
+    thinkMessages[Math.floor(Math.random() * thinkMessages.length)];
+}
+
+function generateChoices(correctWord) {
+  // 正解以外の単語からランダムに3つ選ぶ
+  const others = state.words.filter(w => w.word !== correctWord.word);
+  const dummies = shuffle(others).slice(0, 3);
+  // 4択をシャッフル
+  const all = [correctWord, ...dummies];
+  return shuffle(all);
+}
+
+function selectQuizChoice(selected, correct, btn) {
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  const isCorrect = selected.word === correct.word;
+  // 全ボタンを無効化して色付け
+  document.querySelectorAll('.quiz-choice').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct.meaning) b.classList.add('correct');
+  });
+  if (!isCorrect) {
+    btn.classList.add('wrong');
+    btn.classList.remove('correct');
+    state.quiz.wrongWords.push(correct);
+    state.stats.consecutiveCorrect = 0;
+    state.stats.totalAnswered++;
+    setPiyoSVG(document.getElementById('qzPiyoImg'), 'sad');
+    document.getElementById('qzPiyoMsg').textContent =
+      wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+    // シェイクアニメーション
+    document.getElementById('quizCard').classList.add('shake');
+    setTimeout(() => document.getElementById('quizCard').classList.remove('shake'), 400);
+  } else {
+    state.quiz.correctCount++;
+    state.stats.consecutiveCorrect++;
+    state.stats.totalCorrect++;
+    state.stats.todayLearned++;
+    state.stats.totalLearned++;
+    state.stats.totalAnswered++;
+    setPiyoSVG(document.getElementById('qzPiyoImg'), 'happy');
+    document.getElementById('qzPiyoMsg').textContent =
+      correctMessages[Math.floor(Math.random() * correctMessages.length)];
+    if (state.stats.consecutiveCorrect >= 3) {
+      showStreakPopup(state.stats.consecutiveCorrect);
+    }
+  }
+  saveStats();
+  updateHeaderStats();
+  // 例文表示
+  if (correct.example) {
+    document.getElementById('quizExplanation').style.display = 'block';
+    document.getElementById('quizExampleText').textContent = correct.example;
+  }
+  // 次へボタン表示
+  document.getElementById('quizNextBtn').style.display = 'block';
+}
+
+function nextQuizQuestion() {
+  state.quiz.currentIndex++;
+  renderQuizQuestion();
+}
+
+function showQuizComplete() {
+  document.getElementById('quiz-content').classList.add('hidden');
+  document.getElementById('quiz-complete').classList.remove('hidden');
+  const quiz = state.quiz;
+  const pct = quiz.questions.length > 0
+    ? Math.round(quiz.correctCount / quiz.questions.length * 100)
+    : 0;
+  document.getElementById('qzCompleteScore').textContent = pct + '%';
+  document.getElementById('qzCompleteDetail').textContent =
+    `${quiz.questions.length}問中 ${quiz.correctCount}問 正解`;
+  // 完了ピヨ
+  const completePiyo = document.getElementById('completePiyoQZ');
+  setPiyoSVG(completePiyo, pct >= 80 ? 'cheer' : pct >= 50 ? 'happy' : 'sad');
+  // 復習リスト
+  renderReviewList('qzReviewListWrap', quiz.wrongWords);
+  saveStats();
+}
+
+function restartQuiz() {
+  startQuiz();
+}
+
+/* ============================================
+   復習リスト表示
+   ============================================ */
+function renderReviewList(containerId, wrongWords) {
+  const wrap = document.getElementById(containerId);
+  if (!wrongWords || wrongWords.length === 0) {
+    wrap.innerHTML = '';
+    return;
+  }
+  let html = `<div class="review-list"><div class="review-list-title">📖 復習が必要な単語（${wrongWords.length}語）</div>`;
+  wrongWords.forEach(w => {
+    html += `<div class="review-word-item">
+      <span class="review-word-en">${w.word}</span>
+      <span class="review-word-jp">${w.meaning}</span>
+    </div>`;
+  });
+  html += '</div>';
+  wrap.innerHTML = html;
+}
+
+/* ============================================
+   CSVインポート
+   ============================================ */
+// ドラッグ&ドロップイベント設定
+function setupDropzone() {
+  const area = document.getElementById('importArea');
+  area.addEventListener('dragover', e => {
+    e.preventDefault();
+    area.classList.add('dragover');
+  });
+  area.addEventListener('dragleave', () => area.classList.remove('dragover'));
+  area.addEventListener('drop', e => {
+    e.preventDefault();
+    area.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) processCSVFile(file);
+  });
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) processCSVFile(file);
+  // input をリセット（同じファイルを再選択できるように）
+  event.target.value = '';
+}
+
+function processCSVFile(file) {
+  // ファイル種別チェック
+  if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+    showImportError('CSVファイル（.csv）を選択してください。');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const text = e.target.result;
+      const parsed = parseCSV(text);
+      if (parsed.length < 10) {
+        showImportError(`単語が${parsed.length}語しかありません。最低10語以上のデータが必要です。`);
+        return;
+      }
+      state.importTemp = parsed;
+      showImportPreview(parsed);
+      hideImportError();
+    } catch (err) {
+      showImportError('CSVの読み込みに失敗しました：' + err.message);
+    }
+  };
+  reader.onerror = () => showImportError('ファイルの読み込みに失敗しました。');
+  reader.readAsText(file, 'UTF-8');
+}
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) throw new Error('データが1行以下です。');
+  // ヘッダー行をスキップ
+  const header = lines[0].toLowerCase();
+  const hasHeader = header.includes('word') || header.includes('meaning');
+  const dataLines = hasHeader ? lines.slice(1) : lines;
+  const result = [];
+  const validLevels = ['A1','A2','B1','B2'];
+  dataLines.forEach((line, idx) => {
+    if (!line.trim()) return;
+    // CSVパース（ダブルクォート対応）
+    const cols = parseCSVLine(line);
+    if (cols.length < 2) {
+      console.warn(`行${idx+2} スキップ（列不足）:`, line);
+      return;
+    }
+    const word    = cols[0].trim();
+    const meaning = cols[1].trim();
+    const level   = validLevels.includes((cols[2] || '').trim().toUpperCase())
+      ? (cols[2].trim().toUpperCase()) : 'A2';
+    const pos     = cols[3] ? cols[3].trim() : '';
+    const example = cols[4] ? cols[4].trim() : '';
+    if (word && meaning) {
+      result.push({ word, meaning, level, pos, example });
+    }
+  });
+  if (result.length === 0) throw new Error('有効なデータが0件でした。CSVのフォーマットを確認してください。');
+  return result;
+}
+
+function parseCSVLine(line) {
+  // 簡易CSVパーサー（ダブルクォート内のカンマに対応）
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function showImportPreview(words) {
+  const preview = document.getElementById('importPreview');
+  preview.style.display = 'block';
+  const preview10 = words.slice(0, 10);
+  let html = `<thead><tr>
+    <th>英単語</th><th>意味</th><th>レベル</th><th>品詞</th><th>例文</th>
+  </tr></thead><tbody>`;
+  preview10.forEach(w => {
+    html += `<tr>
+      <td><strong>${escapeHTML(w.word)}</strong></td>
+      <td>${escapeHTML(w.meaning)}</td>
+      <td><span class="card-level-badge level-${w.level}" style="font-size:0.7rem;padding:2px 8px">${w.level}</span></td>
+      <td>${escapeHTML(w.pos || '-')}</td>
+      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHTML(w.example || '-')}</td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('previewTable').innerHTML = html;
+  document.getElementById('previewTotal').textContent =
+    `合計 ${words.length} 語（先頭10件のみ表示）`;
+}
+
+function applyImport() {
+  if (!state.importTemp || state.importTemp.length === 0) return;
+  state.allWords = [...state.importTemp];
+  applyLevelFilter();
+  saveCustomWords();
+  document.getElementById('importPreview').style.display = 'none';
+  const success = document.getElementById('importSuccess');
+  document.getElementById('importSuccessMsg').textContent =
+    `${state.allWords.length}語をインポートしました！`;
+  success.style.display = 'flex';
+  setTimeout(() => { success.style.display = 'none'; }, 4000);
+  state.importTemp = [];
+  updateHomeWordCount();
+  updateFilteredCount();
+}
+
+function resetToBuiltin() {
+  if (!confirm('初期データに戻しますか？インポートしたデータは失われます。')) return;
+  state.allWords = [...BUILTIN_WORDS];
+  applyLevelFilter();
+  localStorage.removeItem('piyotan_words');
+  document.getElementById('importPreview').style.display = 'none';
+  const success = document.getElementById('importSuccess');
+  document.getElementById('importSuccessMsg').textContent = '初期データに戻しました。';
+  success.style.display = 'flex';
+  setTimeout(() => { success.style.display = 'none'; }, 3000);
+  updateHomeWordCount();
+  updateFilteredCount();
+}
+
+function showImportError(msg) {
+  const el = document.getElementById('importError');
+  el.textContent = '⚠️ ' + msg;
+  el.style.display = 'block';
+}
+function hideImportError() {
+  document.getElementById('importError').style.display = 'none';
+}
+
+/* ============================================
+   ユーティリティ
+   ============================================ */
+// Fisher-Yatesシャッフル
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+// XSS対策：HTMLエスケープ
+function escapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================================
+   起動
+   ============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  setupDropzone();
+  // フィルターボタンのホーム画面同期
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    if (btn.textContent.includes('全')) btn.classList.add('active');
+  });
+  updateFilteredCount();
+});
+</script>
+</body>
+</html>
