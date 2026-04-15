@@ -936,6 +936,57 @@
     .correct-flash { animation: correct-flash 0.6s ease; }
 
     .hidden { display: none !important; }
+
+    /* ============================================
+       レベル診断：スコア内訳
+       ============================================ */
+    .diag-score-breakdown {
+      background: var(--color-bg);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      text-align: left;
+    }
+    .diag-score-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .diag-score-row:last-child { margin-bottom: 0; }
+    .diag-level-tag {
+      min-width: 36px;
+      font-family: var(--font-en);
+      font-weight: 800;
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .diag-bar-wrap {
+      flex: 1;
+      background: #e8e0c8;
+      border-radius: 50px;
+      height: 12px;
+      overflow: hidden;
+    }
+    .diag-bar-fill {
+      height: 100%;
+      border-radius: 50px;
+      transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .diag-score-text {
+      font-family: var(--font-en);
+      font-weight: 800;
+      font-size: 0.9rem;
+      min-width: 36px;
+      text-align: right;
+    }
+    .diag-level-cards {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      box-shadow: 0 2px 10px var(--color-shadow);
+    }
   </style>
 </head>
 <body>
@@ -992,6 +1043,7 @@
   <button class="nav-tab active" onclick="showScreen('home')" id="tab-home">🏠 ホーム</button>
   <button class="nav-tab" onclick="showScreen('flashcard')" id="tab-flashcard">🃏 フラッシュカード</button>
   <button class="nav-tab" onclick="showScreen('quiz')" id="tab-quiz">✏️ クイズ</button>
+  <button class="nav-tab" onclick="showScreen('diagnosis')" id="tab-diagnosis">🔍 レベル診断</button>
   <button class="nav-tab" onclick="showScreen('import')" id="tab-import">📂 インポート</button>
 </nav>
 
@@ -1203,6 +1255,101 @@
         <button class="btn-secondary" onclick="showScreen('home')">🏠 ホームへ</button>
       </div>
       <div style="margin-top:24px" id="qzReviewListWrap"></div>
+    </div>
+  </div>
+
+  <!-- レベル診断画面 -->
+  <div class="screen" id="screen-diagnosis">
+    <div class="mode-header">
+      <div class="mode-title">🔍 適正レベル診断</div>
+      <button class="back-btn" onclick="showScreen('home')">← ホームへ</button>
+    </div>
+
+    <!-- 診断スタート画面 -->
+    <div id="diagnosis-start">
+      <div style="text-align:center;margin-bottom:28px">
+        <svg style="width:100px;height:100px;margin:0 auto 16px;display:block" viewBox="0 0 120 120" id="diagStartPiyo"></svg>
+        <div style="font-family:var(--font-jp);font-size:1.1rem;font-weight:700;margin-bottom:8px">あなたにぴったりのレベルを見つけるピヨ！</div>
+        <div style="font-family:var(--font-jp);font-size:0.85rem;color:#888;line-height:1.7">
+          A1〜B2の各レベルから5問ずつ、合計20問に挑戦します。<br>
+          正答率をもとに最適なレベルをおすすめします。<br>
+          何度でも挑戦できます！
+        </div>
+      </div>
+      <div class="diag-level-cards" id="diagPastResult" style="margin-bottom:20px;display:none">
+        <div style="font-family:var(--font-jp);font-size:0.82rem;font-weight:700;color:#888;margin-bottom:10px">📊 前回の診断結果</div>
+        <div id="diagPastResultBody"></div>
+      </div>
+      <button class="btn-primary" style="width:100%;padding:16px;font-size:1.05rem" onclick="startDiagnosis()">
+        🔍 診断スタート！
+      </button>
+    </div>
+
+    <!-- 診断中 -->
+    <div id="diagnosis-content" class="hidden">
+      <!-- プログレス -->
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="diagProgressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-info">
+        <span>問 <strong id="diagCurrent">1</strong> / <strong>20</strong></span>
+        <span id="diagLevelLabel" style="font-family:var(--font-jp);font-size:0.78rem;background:var(--color-accent);padding:2px 10px;border-radius:50px;font-weight:700">A1</span>
+      </div>
+
+      <!-- 問題カード -->
+      <div class="quiz-card" id="diagCard">
+        <div class="quiz-question-label">この英単語の意味は？</div>
+        <div class="quiz-word" id="diagWord">example</div>
+        <div class="quiz-word-pos" id="diagPos"></div>
+        <button class="speak-btn" style="position:relative;margin:10px auto 0;display:flex" onclick="speakDiagWord()" title="発音を聞く">🔊</button>
+      </div>
+
+      <!-- 4択 -->
+      <div class="quiz-choices" id="diagChoices"></div>
+
+      <!-- 解説 -->
+      <div class="quiz-explanation" id="diagExplanation">
+        <div class="ex-label">💡 例文</div>
+        <div id="diagExampleText"></div>
+      </div>
+
+      <!-- 次へ -->
+      <button class="quiz-next-btn" id="diagNextBtn" onclick="nextDiagQuestion()">次の問題へ →</button>
+
+      <!-- ピヨ -->
+      <div class="piyo-feedback" style="margin-top:16px">
+        <svg class="piyo-feedback-img" id="diagPiyoImg" viewBox="0 0 100 100"></svg>
+        <div class="piyo-message" id="diagPiyoMsg">正しい意味を選んでね！</div>
+      </div>
+    </div>
+
+    <!-- 診断結果 -->
+    <div id="diagnosis-result" class="hidden">
+      <div style="text-align:center;padding:30px 16px">
+        <svg style="width:110px;height:110px;margin:0 auto 16px;display:block" viewBox="0 0 120 120" id="diagResultPiyo"></svg>
+        <div style="font-family:var(--font-jp);font-size:1.3rem;font-weight:700;margin-bottom:6px">診断完了！</div>
+        <div style="font-family:var(--font-jp);font-size:0.9rem;color:#888;margin-bottom:20px">あなたのおすすめレベルはこちらピヨ！</div>
+
+        <!-- 推奨レベルバッジ -->
+        <div id="diagRecommendBadge" style="display:inline-block;padding:14px 36px;border-radius:var(--radius-lg);font-family:var(--font-en);font-size:2.2rem;font-weight:800;margin-bottom:8px"></div>
+        <div id="diagRecommendLabel" style="font-family:var(--font-jp);font-size:1rem;font-weight:700;margin-bottom:20px"></div>
+
+        <!-- スコア内訳 -->
+        <div class="diag-score-breakdown" id="diagScoreBreakdown"></div>
+
+        <!-- アクション -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px">
+          <button class="btn-primary" id="diagApplyBtn" onclick="applyDiagnosisLevel()" style="padding:14px">
+            ✅ このレベルでフィルターをセット
+          </button>
+          <button class="btn-secondary" onclick="startDiagnosis()" style="padding:14px">
+            🔄 もう一度診断する
+          </button>
+          <button class="btn-secondary" onclick="showScreen('home')" style="padding:14px">
+            🏠 ホームへ
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -3396,6 +3543,13 @@ function setPiyoSVG(el, expression) {
 /* ============================================
    Web Speech API：音声読み上げ
    ============================================ */
+
+// 品詞略語プレフィックスを除去して読み上げ用テキストを返す
+// 例: "(n.) apple" → "apple" / "(phr.) look forward to" → "look forward to"
+function cleanWordForSpeech(text) {
+  return text.replace(/^\([a-z]+\.\)\s*/i, '').trim();
+}
+
 function speakText(text) {
   if (!('speechSynthesis' in window)) {
     console.warn('このブラウザはWeb Speech APIに対応していません。');
@@ -3410,12 +3564,17 @@ function speakText(text) {
   window.speechSynthesis.speak(utterance);
 }
 function speakWord() {
-  const word = document.getElementById('fcWord').textContent;
-  speakText(word);
+  // "(n.) apple" → "apple" のみ読み上げ
+  const raw = document.getElementById('fcWord').textContent;
+  speakText(cleanWordForSpeech(raw));
 }
 function speakQuizWord() {
-  const word = document.getElementById('qzWord').textContent;
-  speakText(word);
+  const raw = document.getElementById('qzWord').textContent;
+  speakText(cleanWordForSpeech(raw));
+}
+function speakDiagWord() {
+  const raw = document.getElementById('diagWord').textContent;
+  speakText(cleanWordForSpeech(raw));
 }
 
 /* ============================================
@@ -3515,7 +3674,7 @@ function flipCard() {
       document.getElementById('fcActions').style.display = 'flex';
       // 自動読み上げ
       const word = fc.deck[fc.currentIndex];
-      speakText(word.word);
+      speakText(cleanWordForSpeech(word.word));
     }, 300);
     setPiyoSVG(document.getElementById('fcPiyoImg'), 'normal');
     document.getElementById('fcPiyoMsg').textContent = 'わかった？もう一度？';
@@ -3922,11 +4081,232 @@ function escapeHTML(str) {
 }
 
 /* ============================================
+   レベル診断モード
+   ============================================ */
+const DIAG_PER_LEVEL = 5;   // レベルごとの出題数
+const DIAG_LEVELS    = ['A1','A2','B1','B2'];
+const PASS_THRESHOLD = 3;    // このスコア以上で「そのレベルは大丈夫」と判定（5問中）
+
+let diag = {
+  questions: [],    // [{word, choices, correctIdx, level}, ...]
+  currentIndex: 0,
+  scores: {A1:0, A2:0, B1:0, B2:0},
+  answered: false,
+};
+
+function startDiagnosis() {
+  // 各レベルからランダムに5問ずつ選出
+  const questions = [];
+  DIAG_LEVELS.forEach(lv => {
+    const pool = state.allWords.filter(w => w.level === lv);
+    const picked = shuffle([...pool]).slice(0, DIAG_PER_LEVEL);
+    picked.forEach(w => questions.push({...w, _diagLevel: lv}));
+  });
+
+  diag = {
+    questions,
+    currentIndex: 0,
+    scores: {A1:0, A2:0, B1:0, B2:0},
+    answered: false,
+  };
+
+  document.getElementById('diagnosis-start').classList.add('hidden');
+  document.getElementById('diagnosis-result').classList.add('hidden');
+  document.getElementById('diagnosis-content').classList.remove('hidden');
+
+  renderDiagQuestion();
+}
+
+function renderDiagQuestion() {
+  if (diag.currentIndex >= diag.questions.length) {
+    showDiagnosisResult();
+    return;
+  }
+  const q = diag.questions[diag.currentIndex];
+  diag.answered = false;
+
+  // プログレス更新
+  const pct = Math.round(diag.currentIndex / diag.questions.length * 100);
+  document.getElementById('diagProgressFill').style.width = pct + '%';
+  document.getElementById('diagCurrent').textContent = diag.currentIndex + 1;
+
+  // レベルラベル更新
+  const lv = q._diagLevel;
+  const lvEl = document.getElementById('diagLevelLabel');
+  lvEl.textContent = lv;
+  lvEl.className = '';
+  lvEl.style.cssText = 'font-family:var(--font-jp);font-size:0.78rem;padding:2px 10px;border-radius:50px;font-weight:700;';
+  const lvColors = {A1:'#dff6ff;color:#0077aa', A2:'#e8ffe8;color:#007a30', B1:'#fff3d6;color:#aa6600', B2:'#ffe8e8;color:#aa0000'};
+  lvEl.style.cssText += `background:${lvColors[lv].split(';')[0].replace('background:','')};${lvColors[lv].split(';')[1]}`;
+  lvEl.style.background = lvColors[lv].split(';')[0];
+  lvEl.style.color       = lvColors[lv].split(';')[1].replace('color:','');
+
+  // 単語表示
+  document.getElementById('diagWord').textContent = q.word;
+  document.getElementById('diagPos').textContent  = q.pos || '';
+
+  // 4択生成
+  const choices = generateDiagChoices(q);
+  const choicesEl = document.getElementById('diagChoices');
+  choicesEl.innerHTML = '';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'quiz-choice';
+    btn.textContent = c.meaning;
+    btn.onclick = () => selectDiagChoice(c, q, btn);
+    choicesEl.appendChild(btn);
+  });
+
+  document.getElementById('diagExplanation').style.display = 'none';
+  document.getElementById('diagNextBtn').style.display = 'none';
+  setPiyoSVG(document.getElementById('diagPiyoImg'), 'think');
+  document.getElementById('diagPiyoMsg').textContent =
+    thinkMessages[Math.floor(Math.random() * thinkMessages.length)];
+}
+
+function generateDiagChoices(correctWord) {
+  // 同レベル優先・他レベル補完で3択ダミーを生成
+  let sameLevel = state.allWords.filter(w => w.word !== correctWord.word && w.level === correctWord._diagLevel);
+  let others    = state.allWords.filter(w => w.word !== correctWord.word && w.level !== correctWord._diagLevel);
+  const dummies = shuffle([...sameLevel, ...others]).slice(0, 3);
+  return shuffle([correctWord, ...dummies]);
+}
+
+function selectDiagChoice(selected, correct, btn) {
+  if (diag.answered) return;
+  diag.answered = true;
+
+  const isCorrect = selected.word === correct.word;
+  document.querySelectorAll('#diagChoices .quiz-choice').forEach(b => {
+    b.disabled = true;
+    if (b.textContent === correct.meaning) b.classList.add('correct');
+  });
+
+  if (isCorrect) {
+    diag.scores[correct._diagLevel]++;
+    setPiyoSVG(document.getElementById('diagPiyoImg'), 'happy');
+    document.getElementById('diagPiyoMsg').textContent =
+      correctMessages[Math.floor(Math.random() * correctMessages.length)];
+  } else {
+    btn.classList.add('wrong');
+    btn.classList.remove('correct');
+    document.getElementById('diagCard').classList.add('shake');
+    setTimeout(() => document.getElementById('diagCard').classList.remove('shake'), 400);
+    setPiyoSVG(document.getElementById('diagPiyoImg'), 'sad');
+    document.getElementById('diagPiyoMsg').textContent =
+      wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
+  }
+
+  if (correct.example) {
+    document.getElementById('diagExplanation').style.display = 'block';
+    document.getElementById('diagExampleText').textContent = correct.example;
+  }
+  document.getElementById('diagNextBtn').style.display = 'block';
+}
+
+function nextDiagQuestion() {
+  diag.currentIndex++;
+  renderDiagQuestion();
+}
+
+function showDiagnosisResult() {
+  document.getElementById('diagnosis-content').classList.add('hidden');
+  document.getElementById('diagnosis-result').classList.remove('hidden');
+
+  // 推奨レベルを決定
+  // 「合格（PASS_THRESHOLD以上）」の最高レベルの1つ上を推奨
+  // 全レベルPASS → B2 / 全レベルFAIL → A1
+  let recommendLevel = 'A1';
+  for (let i = 0; i < DIAG_LEVELS.length; i++) {
+    if (diag.scores[DIAG_LEVELS[i]] >= PASS_THRESHOLD) {
+      recommendLevel = DIAG_LEVELS[Math.min(i + 1, DIAG_LEVELS.length - 1)];
+    }
+  }
+
+  // 推奨レベルバッジ表示
+  const lvLabels = {A1:'中1基礎レベル', A2:'中2〜3標準レベル', B1:'高1〜2標準レベル', B2:'高2〜3・英検2級レベル'};
+  const lvBgColors = {A1:'#dff6ff', A2:'#e8ffe8', B1:'#fff3d6', B2:'#ffe8e8'};
+  const lvTxtColors = {A1:'#0077aa', A2:'#007a30', B1:'#aa6600', B2:'#aa0000'};
+  const badge = document.getElementById('diagRecommendBadge');
+  badge.textContent = recommendLevel;
+  badge.style.background = lvBgColors[recommendLevel];
+  badge.style.color      = lvTxtColors[recommendLevel];
+  document.getElementById('diagRecommendLabel').textContent = lvLabels[recommendLevel];
+  document.getElementById('diagRecommendLabel').style.color = lvTxtColors[recommendLevel];
+
+  // ピヨ表情
+  const total = Object.values(diag.scores).reduce((a,b)=>a+b, 0);
+  const pct   = Math.round(total / diag.questions.length * 100);
+  setPiyoSVG(document.getElementById('diagResultPiyo'), pct >= 75 ? 'cheer' : pct >= 50 ? 'happy' : 'normal');
+
+  // スコア内訳
+  const breakdown = document.getElementById('diagScoreBreakdown');
+  const barColors = {A1:'#66ccee', A2:'#66cc77', B1:'#ffcc44', B2:'#ff7777'};
+  breakdown.innerHTML = DIAG_LEVELS.map(lv => {
+    const s = diag.scores[lv];
+    const barPct = Math.round(s / DIAG_PER_LEVEL * 100);
+    const pass = s >= PASS_THRESHOLD;
+    return `<div class="diag-score-row">
+      <span class="diag-level-tag" style="background:${lvBgColors[lv]};color:${lvTxtColors[lv]}">${lv}</span>
+      <div class="diag-bar-wrap">
+        <div class="diag-bar-fill" style="width:${barPct}%;background:${barColors[lv]}"></div>
+      </div>
+      <span class="diag-score-text" style="color:${lvTxtColors[lv]}">${s}/${DIAG_PER_LEVEL}</span>
+      <span style="font-size:1rem">${pass ? '✅' : '📝'}</span>
+    </div>`;
+  }).join('');
+
+  // 診断結果をlocalStorageに保存
+  state.stats.lastDiagLevel  = recommendLevel;
+  state.stats.lastDiagScores = {...diag.scores};
+  state.stats.lastDiagDate   = new Date().toLocaleDateString('ja-JP');
+  saveStats();
+
+  // 適用ボタンに推奨レベルを反映
+  document.getElementById('diagApplyBtn').textContent = `✅ ${recommendLevel}（${lvLabels[recommendLevel]}）でフィルターをセット`;
+}
+
+function applyDiagnosisLevel() {
+  const lv = state.stats.lastDiagLevel;
+  if (!lv) return;
+  state.levelFilter = lv;
+  applyLevelFilter();
+  // ホームのフィルターボタンも更新
+  document.querySelectorAll('.filter-btn').forEach(b => {
+    b.classList.remove('active');
+    if ((lv === 'all' && b.textContent.includes('全')) || b.textContent.startsWith(lv)) {
+      b.classList.add('active');
+    }
+  });
+  showScreen('home');
+}
+
+/* ============================================
    起動
    ============================================ */
 document.addEventListener('DOMContentLoaded', () => {
   init();
   setupDropzone();
+  // 診断スタート画面：ピヨ表示と前回結果
+  setPiyoSVG(document.getElementById('diagStartPiyo'), 'normal');
+  setPiyoSVG(document.getElementById('diagPiyoImg'), 'think');
+  if (state.stats.lastDiagLevel) {
+    const lvLabels = {A1:'中1基礎', A2:'中2〜3標準', B1:'高1〜2標準', B2:'高2〜3・英検2級'};
+    const lvBgColors = {A1:'#dff6ff', A2:'#e8ffe8', B1:'#fff3d6', B2:'#ffe8e8'};
+    const lvTxtColors = {A1:'#0077aa', A2:'#007a30', B1:'#aa6600', B2:'#aa0000'};
+    const sc = state.stats.lastDiagScores || {};
+    const wrap = document.getElementById('diagPastResult');
+    wrap.style.display = 'block';
+    const lv = state.stats.lastDiagLevel;
+    document.getElementById('diagPastResultBody').innerHTML =
+      `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-family:var(--font-jp);font-size:0.82rem;color:#888">${state.stats.lastDiagDate || ''}</span>
+        <span style="background:${lvBgColors[lv]};color:${lvTxtColors[lv]};font-family:var(--font-en);font-weight:800;padding:4px 14px;border-radius:50px">${lv} ${lvLabels[lv]}</span>
+      </div>
+      <div style="font-family:var(--font-jp);font-size:0.8rem;color:#aaa;margin-top:6px">
+        A1: ${sc.A1||0}/5 &nbsp; A2: ${sc.A2||0}/5 &nbsp; B1: ${sc.B1||0}/5 &nbsp; B2: ${sc.B2||0}/5
+      </div>`;
+  }
   // フィルターボタンのホーム画面同期
   document.querySelectorAll('.filter-btn').forEach(btn => {
     if (btn.textContent.includes('全')) btn.classList.add('active');
