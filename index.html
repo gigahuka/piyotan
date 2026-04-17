@@ -659,16 +659,112 @@
       box-shadow: 0 4px 12px rgba(255,217,61,0.3);
     }
     .quiz-choice.correct {
-      background: #e8f8ea;
-      border-color: var(--color-sub);
-      color: #2a7a30;
+      background: var(--color-sub);
+      border: 3px solid var(--color-sub-dark);
+      color: white;
+      font-weight: 700;
     }
     .quiz-choice.wrong {
-      background: #fdecea;
-      border-color: var(--color-error);
-      color: #c0392b;
+      background: var(--color-error);
+      border: 3px solid #e05555;
+      color: white;
+      font-weight: 700;
     }
     .quiz-choice:disabled { cursor: not-allowed; }
+
+    /* 自動送り設定バー */
+    .quiz-settings-bar {
+      background: white;
+      border-radius: var(--radius-md);
+      padding: 11px 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 2px 10px var(--color-shadow);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .quiz-settings-label {
+      font-family: var(--font-jp);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #888;
+      white-space: nowrap;
+    }
+    .toggle-switch {
+      position: relative;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      background: #ccc;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      height: 18px; width: 18px;
+      left: 3px; bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    .toggle-switch input:checked + .toggle-slider { background: var(--color-sub); }
+    .toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
+    .delay-slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 120px;
+    }
+    .delay-slider {
+      flex: 1;
+      height: 5px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: #e8e0c8;
+      border-radius: 50px;
+      outline: none;
+      cursor: pointer;
+    }
+    .delay-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 20px; height: 20px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .delay-label {
+      font-family: var(--font-en);
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--color-text);
+      min-width: 32px;
+      text-align: right;
+    }
+    /* カウントダウンバー */
+    .auto-countdown-bar {
+      height: 5px;
+      background: #f0ead6;
+      border-radius: 50px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      display: none;
+    }
+    .auto-countdown-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-sub), var(--color-accent));
+      border-radius: 50px;
+      width: 100%;
+    }
 
     .quiz-explanation {
       background: var(--color-light);
@@ -1207,6 +1303,23 @@
       <button class="back-btn" onclick="showScreen('home')">← ホームへ</button>
     </div>
 
+    <!-- 自動送り設定バー -->
+    <div class="quiz-settings-bar">
+      <span class="quiz-settings-label">⚡ 自動送り</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="autoAdvanceToggle" checked onchange="saveQuizSettings()">
+        <span class="toggle-slider"></span>
+      </label>
+      <div id="autoDelayControl" class="delay-slider-wrap">
+        <span class="quiz-settings-label">1秒</span>
+        <input type="range" class="delay-slider" id="autoDelaySlider"
+          min="1" max="10" value="3"
+          oninput="updateDelayLabel(); saveQuizSettings()">
+        <span class="quiz-settings-label">10秒</span>
+        <span class="delay-label" id="autoDelayLabel">3秒</span>
+      </div>
+    </div>
+
     <!-- クイズ内部 -->
     <div id="quiz-content">
       <div class="progress-bar-wrap">
@@ -1215,6 +1328,11 @@
       <div class="progress-info">
         <span><strong id="qzCurrent">1</strong> / <strong id="qzTotal">0</strong> 問</span>
         <span>✅ <strong id="qzCorrect">0</strong> 正解</span>
+      </div>
+
+      <!-- カウントダウンバー -->
+      <div class="auto-countdown-bar" id="autoCountdownBar">
+        <div class="auto-countdown-fill" id="autoCountdownFill"></div>
       </div>
 
       <div class="quiz-card" id="quizCard">
@@ -3761,6 +3879,90 @@ function startQuiz() {
   renderQuizQuestion();
 }
 
+/* ============================================
+   クイズ：自動送り設定
+   ============================================ */
+let quizAutoTimer = null;
+let quizCountdownInterval = null;
+const defaultQuizSettings = { autoAdvance: true, autoDelay: 3 };
+let quizSettings = { ...defaultQuizSettings };
+
+function loadQuizSettings() {
+  const saved = localStorage.getItem('piyotan_quiz_settings');
+  if (saved) {
+    try { quizSettings = Object.assign({}, defaultQuizSettings, JSON.parse(saved)); } catch(e) {}
+  }
+  applyQuizSettingsUI();
+}
+
+function saveQuizSettings() {
+  quizSettings.autoAdvance = document.getElementById('autoAdvanceToggle').checked;
+  quizSettings.autoDelay   = parseInt(document.getElementById('autoDelaySlider').value);
+  localStorage.setItem('piyotan_quiz_settings', JSON.stringify(quizSettings));
+  updateDelayLabel();
+  toggleDelayControl();
+}
+
+function applyQuizSettingsUI() {
+  document.getElementById('autoAdvanceToggle').checked    = quizSettings.autoAdvance;
+  document.getElementById('autoDelaySlider').value        = quizSettings.autoDelay;
+  updateDelayLabel();
+  toggleDelayControl();
+}
+
+function updateDelayLabel() {
+  document.getElementById('autoDelayLabel').textContent =
+    document.getElementById('autoDelaySlider').value + '秒';
+}
+
+function toggleDelayControl() {
+  const el = document.getElementById('autoDelayControl');
+  const on = document.getElementById('autoAdvanceToggle').checked;
+  el.style.opacity        = on ? '1' : '0.35';
+  el.style.pointerEvents  = on ? 'auto' : 'none';
+}
+
+function startAutoAdvanceTimer() {
+  if (!quizSettings.autoAdvance) return;
+  cancelAutoAdvanceTimer();
+  const delay = quizSettings.autoDelay * 1000;
+  // カウントダウンバーアニメーション
+  const bar     = document.getElementById('autoCountdownFill');
+  const barWrap = document.getElementById('autoCountdownBar');
+  barWrap.style.display = 'block';
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    bar.style.transition = `width ${quizSettings.autoDelay}s linear`;
+    bar.style.width = '0%';
+  }));
+  // 次へボタンにカウントダウン表示
+  let remaining = quizSettings.autoDelay;
+  const nextBtn = document.getElementById('quizNextBtn');
+  nextBtn.textContent = `次の問題へ → (${remaining}秒)`;
+  quizCountdownInterval = setInterval(() => {
+    remaining--;
+    if (remaining > 0) {
+      nextBtn.textContent = `次の問題へ → (${remaining}秒)`;
+    } else {
+      clearInterval(quizCountdownInterval);
+      quizCountdownInterval = null;
+    }
+  }, 1000);
+  // 自動送りタイマー
+  quizAutoTimer = setTimeout(() => nextQuizQuestion(), delay);
+}
+
+function cancelAutoAdvanceTimer() {
+  if (quizAutoTimer)         { clearTimeout(quizAutoTimer);         quizAutoTimer = null; }
+  if (quizCountdownInterval) { clearInterval(quizCountdownInterval); quizCountdownInterval = null; }
+  const barWrap = document.getElementById('autoCountdownBar');
+  if (barWrap) barWrap.style.display = 'none';
+}
+
+/* ============================================
+   クイズ：問題レンダリング
+   ============================================ */
 function renderQuizQuestion() {
   const quiz = state.quiz;
   if (quiz.currentIndex >= quiz.questions.length) {
@@ -3769,8 +3971,10 @@ function renderQuizQuestion() {
   }
   const q = quiz.questions[quiz.currentIndex];
   quiz.answered = false;
+  cancelAutoAdvanceTimer();
+
   document.getElementById('qzWord').textContent = q.word;
-  document.getElementById('qzPos').textContent = q.pos || '';
+  document.getElementById('qzPos').textContent  = q.pos || '';
   // プログレス
   const pct = Math.round(quiz.currentIndex / quiz.questions.length * 100);
   document.getElementById('qzProgressFill').style.width = pct + '%';
@@ -3784,12 +3988,15 @@ function renderQuizQuestion() {
     const btn = document.createElement('button');
     btn.className = 'quiz-choice';
     btn.textContent = c.meaning;
+    btn.dataset.meaning = c.meaning; // 比較用
     btn.onclick = () => selectQuizChoice(c, q, btn);
     choicesEl.appendChild(btn);
   });
   // 解説・次へボタンを隠す
   document.getElementById('quizExplanation').style.display = 'none';
-  document.getElementById('quizNextBtn').style.display = 'none';
+  const nextBtn = document.getElementById('quizNextBtn');
+  nextBtn.style.display = 'none';
+  nextBtn.textContent = '次の問題へ →';
   // ピヨ
   setPiyoSVG(document.getElementById('qzPiyoImg'), 'think');
   document.getElementById('qzPiyoMsg').textContent =
@@ -3800,30 +4007,32 @@ function generateChoices(correctWord) {
   // 正解以外の単語からランダムに3つ選ぶ
   const others = state.words.filter(w => w.word !== correctWord.word);
   const dummies = shuffle(others).slice(0, 3);
-  // 4択をシャッフル
-  const all = [correctWord, ...dummies];
-  return shuffle(all);
+  return shuffle([correctWord, ...dummies]);
 }
 
 function selectQuizChoice(selected, correct, btn) {
   if (state.quiz.answered) return;
   state.quiz.answered = true;
   const isCorrect = selected.word === correct.word;
-  // 全ボタンを無効化して色付け
-  document.querySelectorAll('.quiz-choice').forEach(b => {
+
+  // 全ボタンを無効化・色付け・アイコン付与
+  document.querySelectorAll('#quizChoices .quiz-choice').forEach(b => {
     b.disabled = true;
-    if (b.textContent === correct.meaning) b.classList.add('correct');
+    if (b.dataset.meaning === correct.meaning) {
+      b.classList.add('correct');
+      b.innerHTML = '✅ ' + escapeHTML(b.dataset.meaning);
+    }
   });
   if (!isCorrect) {
-    btn.classList.add('wrong');
     btn.classList.remove('correct');
+    btn.classList.add('wrong');
+    btn.innerHTML = '❌ ' + escapeHTML(btn.dataset.meaning);
     state.quiz.wrongWords.push(correct);
     state.stats.consecutiveCorrect = 0;
     state.stats.totalAnswered++;
     setPiyoSVG(document.getElementById('qzPiyoImg'), 'sad');
     document.getElementById('qzPiyoMsg').textContent =
       wrongMessages[Math.floor(Math.random() * wrongMessages.length)];
-    // シェイクアニメーション
     document.getElementById('quizCard').classList.add('shake');
     setTimeout(() => document.getElementById('quizCard').classList.remove('shake'), 400);
   } else {
@@ -3847,11 +4056,13 @@ function selectQuizChoice(selected, correct, btn) {
     document.getElementById('quizExplanation').style.display = 'block';
     document.getElementById('quizExampleText').textContent = correct.example;
   }
-  // 次へボタン表示
+  // 次へボタン表示 → 自動送りタイマー開始
   document.getElementById('quizNextBtn').style.display = 'block';
+  startAutoAdvanceTimer();
 }
 
 function nextQuizQuestion() {
+  cancelAutoAdvanceTimer();
   state.quiz.currentIndex++;
   renderQuizQuestion();
 }
@@ -4287,6 +4498,7 @@ function applyDiagnosisLevel() {
 document.addEventListener('DOMContentLoaded', () => {
   init();
   setupDropzone();
+  loadQuizSettings();
   // 診断スタート画面：ピヨ表示と前回結果
   setPiyoSVG(document.getElementById('diagStartPiyo'), 'normal');
   setPiyoSVG(document.getElementById('diagPiyoImg'), 'think');
